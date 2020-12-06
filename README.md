@@ -1,0 +1,1 @@
+An experimental reimplementation of [ScalaTags](http://www.lihaoyi.com/scalatags/) in (extremely meta) Scala 3.
