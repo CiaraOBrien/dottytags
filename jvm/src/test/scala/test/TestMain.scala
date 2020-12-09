@@ -13,9 +13,21 @@ object Main {
     //println(print(css("background-color") := "red"))
     //println(print(cssPx("background-color") := "red"))
 
-    val str1 = tag("a")("bbb", attr("c") := "d", tag("e")(System.currentTimeMillis.toString), cssPx("color") := "red", attr("class") := ("bruh" + System.currentTimeMillis.toString))
-    val str2 = tag("a")("bbb", attr("c") := "d", tag("e")(System.currentTimeMillis.toString), cssPx("color") := "red", attr("class") := ("bruh" + System.currentTimeMillis.toString))
-
+    println(
+      tag("html")(
+        tag("head")(
+          tag("script")("console.log(1)")
+        ),
+        tag("body")(
+          tag("h1")(css("color") := "red", "title"),
+          tag("div")(css("backgroundColor") := "blue",
+            tag("a")(attr("href") := "www.google.com", 
+              tag("p")("Goooogle")
+            )
+          )
+        )
+      )
+    )
 
     //assert(capitalize("abc1_") == "ABC1_")
     //assert(Escape.isValidTag("abc1."))

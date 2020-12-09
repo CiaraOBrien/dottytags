@@ -131,7 +131,7 @@ object Core {
                   case '{ _sticky._unescaped($s) } => list = s :: list
                   case _ => report.error("Invalid str")
                 )
-                list = graft(str(s"<$name/>"), list)
+                list = graft(str(s"</$name>"), list)
               if (list.size == 1) then stick_unescaped(list.head)
               else stick_unescaped(stick_splice(list.reverse: _*))
             case _ => report.error("Varargs was somehow not varargs"); stick_unescaped(str(""))
