@@ -10,19 +10,16 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 		version := "0.1.0",
 		scalaVersion := "3.0.0-M2",
 		scalacOptions ++= Seq(
-			"-source:3.1-migration",
-			"-indent", "-new-syntax", "-rewrite",
+			"-source:3.1-migration", "-indent", "-new-syntax",
 			"-Yexplicit-nulls", "-Ycheck-init", "-language:strictEquality", 
-		)
+		),
+		libraryDependencies += "com.lihaoyi" %% "utest" % "0.7.5" % "test",
+		testFrameworks += new TestFramework("utest.runner.Framework"),
 	)
 	.jvmSettings (
-		libraryDependencies ++= Seq(
-			"org.scalatest" % "scalatest_2.13" % "3.2.3" % Test,
-		)
+		libraryDependencies += "com.lihaoyi" % "scalatags_2.13" % "0.9.2" % "test",
+		Test / scalacOptions += "-Xprint:collectSuperCalls"
 	)
 	.jsSettings (
-		libraryDependencies ++= Seq(
-			"org.scalatest" % "scalatest_sjs1_2.13" % "3.2.3" % Test,
-		),
-		scalaJSUseMainModuleInitializer := true,
+		libraryDependencies += "com.lihaoyi" % "scalatags_sjs1_2.13" % "0.9.2" % "test",
 	)
