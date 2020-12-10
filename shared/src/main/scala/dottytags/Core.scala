@@ -2,6 +2,7 @@ package dottytags
 
 import scala.quoted._
 import scala.annotation.targetName
+import scala.language.implicitConversions
 
 object Core {
 
@@ -10,46 +11,90 @@ object Core {
     * which do not make it into the final output and which should not be used by the calling
     * code (hence the mangled names)
     */
-  /*object _sticky {
+  object _sticky {
     def _splice(parts: String*): String = parts.mkString("")
-    def _attrName   (s: String): AttrName  = s
-    def _attr       (s: String): Attr      = s
-    def _styleName  (s: String): StyleName = s
-    def _styleNamePx(s: String): StyleName = s
-    def _style      (s: String): Style     = s
-    def _unescaped  (s: String): Unescaped = s
+    def _attrName   (s: String): AttrName               = s
+    def _attr       (s: String): Attr                   = s
+    def _styleName  (s: String, px: Boolean): StyleName = s
+    def _style      (s: String): Style                  = s
+    def _raw        (s: String): Raw                    = s
+    def _tagName    (s: String, sc: Boolean): TagName   = s
+    def _tag        (s: String): Tag                    = s
+    implicit def _frag (s: Seq[Modifier]): Frag         = s.mkString("")
     opaque type AttrName  = String
     opaque type Attr      = String
     opaque type StyleName = String
     opaque type Style     = String
-    opaque type Unescaped = String
+    opaque type Raw       = String
+    opaque type TagName   = String
+    opaque type Tag       = String
+    opaque type Frag      = String
+    type Modifier         = String | Attr | Style | Raw | Tag | Frag
   }
 
-  export _sticky.{AttrName, Attr, StyleName, Style, Unescaped}
+  export _sticky.{AttrName, Attr, StyleName, Style, Raw, TagName, Tag, Frag, Modifier, given}
+  
+  private trait Span
+  private case class Static(str: String) extends Span
+  private case class Dynamic(expr: Expr[String]) extends Span
+  private case class Splice(parts: Seq[Span]) extends Span {
+    def flatten: Splice = Splice(parts.flatMap(_ match
+      case s: Static => Seq(s)
+      case d: Dynamic => Seq(d)
+      case sp: Splice => sp.flatten.parts
+      ))
+    def +(s: Span): Splice = Splice(s match
+      case Static(s) => parts.headOption match 
+        case Some(Static(s1)) => Static(s1 + s) +: parts 
+        case Some(Dynamic(_)) => Static(s) +: parts
+        case _ => Seq(Static(s))
+      case d @ Dynamic(_) => d +: parts
+      case Splice(ps) => ps.foldLeft(this)((acc, p) => acc + p).parts
+    )
+    def exprs(using Quotes): Seq[Expr[String]] = parts.collect {
+      case Static(str) => Expr(str)
+      case Dynamic(expr) => expr
+    }
+  }
+  private def unstick_string(s: Expr[String])(using Quotes): Span = s match 
+    case Expr(s: String) => Static(s)
+    case '{ _sticky._splice(${BetterVarargs(parts)}: _*) } => Splice(parts.map(unstick_string))
+    case dyn: Expr[String] => Dynamic(dyn)
+  private def unstick_attrName(s: Expr[AttrName])(using Quotes): Static = s match 
+    case '{ _sticky._attrName(${Expr(s: String)}) } => Static(s)
+    case _ => error("Illegally-obtained AttrName value")
+  private def unstick_attr(s: Expr[Attr])(using Quotes): Span = s match 
+    case '{ _sticky._attr($s) } => unstick_string(s)
+    case _ => error("Illegally-obtained Attr value")
+  private def unstick_styleName(s: Expr[StyleName])(using Quotes): (Static, Boolean) = s match 
+    case '{ _sticky._styleName(${Expr(s: String)}, ${Expr(b: Boolean)}) } => (Static(s), b)
+    case _ => error("Illegally-obtained StyleName value")
+  private def unstick_style(s: Expr[Style])(using Quotes): Span = s match 
+    case '{ _sticky._style($s) } => unstick_string(s)
+    case _ => error("Illegally-obtained Style value")
+  private def unstick_raw(s: Expr[Raw])(using Quotes): Span = s match 
+    case '{ _sticky._raw($s) } => unstick_string(s)
+    case _ => error("Illegally-obtained Raw value")
+  private def unstick_tagName(s: Expr[TagName])(using Quotes): (Static, Boolean) = s match 
+    case '{ _sticky._tagName(${Expr(s: String)}, ${Expr(b: Boolean)}) } => (Static(s), b)
+    case _ => error("Illegally-obtained TagName value")
+  private def unstick_tag(s: Expr[Tag])(using Quotes): Span = s match 
+    case '{ _sticky._tag($s) } => unstick_string(s)
+    case _ => error("Illegally-obtained Tag value")
+  private def unstick_frag(s: Expr[Frag])(using Quotes): Seq[Expr[Modifier]] = s match 
+    case '{ _sticky._frag(Seq[Modifier](${BetterVarargs(parts)}: _*)) } => parts
+    case _ => error("Illegally-obtained Tag value")
 
-  private[dottytags] def stick_splice(parts: Expr[String]*)(using Quotes): Expr[String] = 
-    import quotes.reflect._
-    '{ _sticky._splice(${Varargs(parts)}: _*) }
-    //Apply(Ref(Symbol.requiredMethod(s"dottytags.Core._sticky._splice")), List(Term.of(Varargs(parts)))).asExprOf[String]
-  private[dottytags] def stick_attrName(s: Expr[String])(using Quotes): Expr[AttrName] = 
-    import quotes.reflect._
-    Apply(Ref(Symbol.requiredMethod(s"dottytags.Core._sticky._attrName")), List(Term.of(s))).asExprOf[AttrName]
-  private[dottytags] def stick_attr(s: Expr[String])(using Quotes): Expr[Attr] = 
-    import quotes.reflect._
-    Apply(Ref(Symbol.requiredMethod(s"dottytags.Core._sticky._attr")), List(Term.of(s))).asExprOf[Attr]
-  private[dottytags] def stick_styleName(s: Expr[String])(using Quotes): Expr[StyleName] = 
-    import quotes.reflect._
-    Apply(Ref(Symbol.requiredMethod(s"dottytags.Core._sticky._styleName")), List(Term.of(s))).asExprOf[StyleName]
-  private[dottytags] def stick_styleNamePx(s: Expr[String])(using Quotes): Expr[StyleName] = 
-    import quotes.reflect._
-    Apply(Ref(Symbol.requiredMethod(s"dottytags.Core._sticky._styleNamePx")), List(Term.of(s))).asExprOf[StyleName]
-  private[dottytags] def stick_style(s: Expr[String])(using Quotes): Expr[Style] = 
-    import quotes.reflect._
-    Apply(Ref(Symbol.requiredMethod(s"dottytags.Core._sticky._style")), List(Term.of(s))).asExprOf[Style]
-  private[dottytags] def stick_unescaped(s: Expr[String])(using Quotes): Expr[Unescaped] = 
-    import quotes.reflect._
-    Apply(Ref(Symbol.requiredMethod(s"dottytags.Core._sticky._unescaped")), List(Term.of(s))).asExprOf[Unescaped]
-  private def str(str: String)(using Quotes): Expr[String] = Expr(str)
+  private def stick_splice(parts: Expr[String]*)(using Quotes): Expr[String]  = '{ _sticky._splice(${Varargs(parts)}: _*) }
+  private def stick_attrName (s: Expr[String])                   (using Quotes): Expr[AttrName]  = '{ _sticky._attrName($s) }
+  private def stick_attr     (s: Expr[String])                   (using Quotes): Expr[Attr]      = '{ _sticky._attr($s) }
+  private def stick_styleName(s: Expr[String], px: Expr[Boolean])(using Quotes): Expr[StyleName] = '{ _sticky._styleName($s, $px) }
+  private def stick_style    (s: Expr[String])                   (using Quotes): Expr[Style]     = '{ _sticky._style($s) }
+  private def stick_raw      (s: Expr[String])                   (using Quotes): Expr[Raw]       = '{ _sticky._raw($s) }
+  private def stick_tagName  (s: Expr[String], sc: Expr[Boolean])(using Quotes): Expr[TagName]   = '{ _sticky._tagName($s, $sc) }
+  private def stick_tag      (s: Expr[String])                   (using Quotes): Expr[Tag]       = '{ _sticky._tag($s) }
+
+  private implicit def str(str: String)(using Quotes): Expr[String] = Expr(str)
 
   private def pprint(obj: Any, depth: Int = 0, paramName: Option[String] = None): Unit = {
     val indent = "  " * depth
@@ -66,160 +111,76 @@ object Core {
     }
   }
 
+  private def error(error: String)(using Quotes): Nothing = 
+    import quotes.reflect._
+    report.error(error)
+    throw scala.quoted.runtime.StopMacroExpansion()
+
   inline def print(inline s: Any): Any = ${ printMacro('s) }
   private def printMacro(s: Expr[Any])(using Quotes): Expr[Any] =
     import quotes.reflect._
-    pprint(Term.of(s))
+    pprint(s.asTerm)
     s
 
-  inline def tag(inline name: String): Unescaped = ${ nullaryTagMacro('name) }
-  private def nullaryTagMacro(name: Expr[String])(using Quotes): Expr[Unescaped] = name.unlift match 
-    case Some(name: String) => if isValidTagName(name) then stick_unescaped(str(s"<$name/>")) else 
-              report.error(s"Not a valid XML tag name: $name");  stick_unescaped(str(""))
-    case _ => report.error("Tag name must be a literal string"); stick_unescaped(str(""))
+  inline def tag(inline name: String): TagName = ${ tagNameMacro('name, '{false}) }
+  inline def tagSelfClosing(inline name: String): TagName = ${ tagNameMacro('name, '{true}) }
+  private def tagNameMacro(name: Expr[String], sc: Expr[Boolean])(using Quotes): Expr[TagName] = name.value match 
+    case Some(name: String) => if isValidTagName(name) then stick_tagName(name, sc) else 
+              error(s"Not a valid XML tag name: $name.")
+    case _ => error("Tag name must be a literal string.")
 
-  type Child = Attr | Style | Unescaped | String
-  inline def tag(inline name: String)(inline args: Child*): Unescaped = ${ tagMacro('name)('args) }
-  private def tagMacro(name: Expr[String])(args: Expr[Seq[Child]])(using Quotes): Expr[Unescaped] = 
+  extension (inline name: TagName) inline def apply(inline args: Modifier*): Tag = ${ tagMacro('name)('args) }
+  private def tagMacro(name: Expr[TagName])(args: Expr[Seq[Modifier]])(using Quotes): Expr[Tag] = 
     import quotes.reflect._
-    name.unlift match 
-      case Some(name: String) => if !isValidTagName(name) then 
-        report.error(s"Not a valid XML tag name: $name");  stick_unescaped(str("")) else { 
-          args match
-            case BetterVarargs(args) =>
-              val attrs  = args.filter(_.isExprOf[Attr])
-              val styles = args.filter(_.isExprOf[Style])
-              val strs   = args.filter(s => s.isExprOf[String] || s.isExprOf[Unescaped])
-              def graft(part: Expr[String], list: List[Expr[String]]): List[Expr[String]] = part match
-                  case Const(s: String) => list match {
-                    case Const(s0: String) :: rest => str(s0 + s) :: rest
-                    case head :: rest => str(s) :: (head :: rest)
-                    case List() => List(str(s))
-                  }
-                  case dyn => dyn :: list
-              var list   = List(str(s"<$name"))
-              if attrs.nonEmpty then list = graft(str(" "), list)
-              attrs.foreach (attr => attr match
-                case '{ _sticky._attr(_sticky._splice(${BetterVarargs(parts)}: _*)) } => parts.foreach(part => list = graft(part, list))
-                case '{ _sticky._attr(${Const(s: String)}) } => list = graft(str(s), list)
-                case _ => report.error("Invalid attr")
-              )
-              if attrs.nonEmpty then 
-                list = list.head match {
-                  case Const(s: String) => str(s.replaceAll("""(?m)\s+$""", "").nn) :: list.tail
-                }
-              if styles.nonEmpty then list = graft(str(" style=\""), list)
-              styles.foreach (style => style match
-                case '{ _sticky._style(_sticky._splice(${BetterVarargs(parts)}: _*)) } => parts.foreach(part => list = graft(part, list))
-                case '{ _sticky._style(${Const(s: String)}) } => list = graft(str(s), list)
-                case _ => report.error("Invalid style")
-              )
-              if styles.nonEmpty then 
-                list = list.head match {
-                  case Const(s: String) => str(s.replaceAll("""(?m)\s+$""", "").nn) :: list.tail
-                }
-                list = graft(str("\""), list)
-              if strs.isEmpty    then list = graft(str("/>"), list)
-              else
-                list = graft(str(">"), list)
-                strs.foreach (s => s match
-                  case '{ _sticky._splice(${BetterVarargs(parts)}: _*) } => parts.foreach(part => list = graft('{escape($part)}, list))
-                  case '{ _sticky._unescaped(_sticky._splice(${BetterVarargs(parts)}: _*)) } => parts.foreach(part => list = graft(part, list))
-                  case Const(s: String) => list = graft(str(escape(s)), list)
-                  case '{ _sticky._unescaped(${Const(s: String)}) } => list = graft(str(s), list)
-                  case s: Expr[String] => list = '{escape($s)} :: list
-                  case '{ _sticky._unescaped($s) } => list = s :: list
-                  case _ => report.error("Invalid str")
-                )
-                list = graft(str(s"</$name>"), list)
-              if (list.size == 1) then stick_unescaped(list.head)
-              else stick_unescaped(stick_splice(list.reverse: _*))
-            case _ => report.error("Varargs was somehow not varargs"); stick_unescaped(str(""))
+    val (nstr, selfClosing) = unstick_tagName(name)
+    args match
+      case BetterVarargs(args) => 
+        var attrsSplice = Splice(Seq(Static(s"<$nstr ")))
+        var stylesSplice = Splice(Seq())
+        var bodySplice = Splice(Seq())
+        def iter(args: Seq[Expr[Modifier]]): Unit = {
+          args.foreach(a =>
+            if a.isExprOf[Attr] then attrsSplice = attrsSplice + unstick_attr(a.asExprOf[Attr])
+            else if a.isExprOf[Style] then stylesSplice = stylesSplice + unstick_style(a.asExprOf[Style])
+            else if a.isExprOf[String] then bodySplice = bodySplice + unstick_string(a.asExprOf[String])
+            else if a.isExprOf[Raw] then bodySplice = bodySplice + unstick_raw(a.asExprOf[Raw])
+            else if a.isExprOf[Tag] then bodySplice = bodySplice + unstick_tag(a.asExprOf[Tag])
+            else if a.isExprOf[Frag] then iter(unstick_frag(a.asExprOf[Frag])))
         }
-      case _ => report.error("Tag name must be a literal string"); stick_unescaped(str(""))
+        iter(args)
+        stick_tag(stick_splice((attrsSplice + stylesSplice + bodySplice).exprs: _*))
+      case _ => error("Varargs was somehow not varargs")
                 
-  inline def raw(inline raw: String): Unescaped = ${ rawMacro('raw) }
-  private def rawMacro(raw: Expr[String])(using Quotes): Expr[Unescaped] = stick_unescaped(raw)
+  inline def raw(inline raw: String): Raw = ${ rawMacro('raw) }
+  private def rawMacro(raw: Expr[String])(using Quotes): Expr[Raw] = stick_raw(raw)
 
   inline def attr(inline name: String): AttrName = ${ attrNameMacro('name) }
-  private def attrNameMacro(name: Expr[String])(using Quotes): Expr[AttrName] = name.unlift match 
-    case Some(name: String) => if isValidAttrName(name) then stick_attrName(str(name)) else 
-              report.error(s"Not a valid XML attribute name: $name");   stick_attrName(str(""))
-    case _ => report.error("Attribute name must be a literal string."); stick_attrName(str(""))
+  private def attrNameMacro(name: Expr[String])(using Quotes): Expr[AttrName] = name.value match 
+    case Some(name: String) => if isValidAttrName(name) then stick_attrName(name) else 
+              error(s"Not a valid XML attribute name: $name.")
+    case _ => error("Attribute name must be a literal string.")
 
-  inline def css(inline name: String): StyleName = ${ styleNameMacro('name) }
-  private def styleNameMacro(name: Expr[String])(using Quotes): Expr[StyleName] = name.unlift match 
-    case Some(name: String) => if isValidStyleName(name) then stick_styleName(str(name)) else 
-              report.error(s"Not a valid CSS style name: $name");   stick_styleName(str(""))
-    case _ => report.error("Style name must be a literal string."); stick_styleName(str(""))
-  
-  inline def cssPx(inline name: String): StyleName = ${ styleNamePxMacro('name) }
-  private def styleNamePxMacro(name: Expr[String])(using Quotes): Expr[StyleName] = name.unlift match 
-    case Some(name: String) => if isValidStyleName(name) then stick_styleNamePx(str(name)) else 
-              report.error(s"Not a valid CSS style name: $name");   stick_styleNamePx(str(""))
-    case _ => report.error("Style name must be a literal string."); stick_styleNamePx(str(""))
+  inline def css  (inline name: String): StyleName = ${ styleNameMacro('name, '{false}) }
+  inline def cssPx(inline name: String): StyleName = ${ styleNameMacro('name, '{true} ) }
+  private def styleNameMacro(name: Expr[String], px: Expr[Boolean])(using Quotes): Expr[StyleName] = name.value match 
+    case Some(name: String) => if isValidStyleName(name) then stick_styleName(name, px) else 
+              error(s"Not a valid CSS style name: $name.")
+    case _ => error("Style name must be a literal string.")
   
   extension (inline name: AttrName) @targetName("setAttr") inline def :=(inline value: String): Attr = ${ attrMacro('name, 'value) }
-  private def attrMacro(name: Expr[AttrName], value: Expr[String])(using Quotes): Expr[Attr] = {
-    import quotes.reflect._
-    def rec(tree: Term): Option[Expr[String]] = tree match {
-      case Apply(Ident("_attrName"), List(e)) => Some(e.asExprOf[String])
-      case Block(List(), e) => rec(e)
-      case Typed(e, _) => rec(e)
-      case Inlined(_, List(), e) => rec(e)
-      case _  => None
-    }
-    rec(Term.of(name)).flatMap(_.unlift) match
-      case Some(name: String) => value.unlift match 
-        case Some(value: String) => stick_attr(str(name + "=\"" + escape(value) + "\" "))
-        case _ => stick_attr(stick_splice(str(name + "=\""), '{escape(${value})}, str("\" ")))
-      case _ => report.error("Attribute name must be static."); stick_attr(str(""))
+  private def attrMacro(name: Expr[AttrName], setTo: Expr[String])(using Quotes): Expr[Attr] = {
+    val n = unstick_attrName(name)
+    setTo.value match 
+      case Some(setTo: String) => stick_attr(n.str + "=\"" + escape(setTo) + "\"")
+      case _ => stick_attr(stick_splice(n.str + "=\"", '{escape($setTo)}, "\""))
   }
   
   extension (inline name: StyleName) @targetName("setStyle") inline def :=(inline value: String): Style = ${ styleMacro('name, 'value) }
-  private def styleMacro(name: Expr[StyleName], value: Expr[String])(using Quotes): Expr[Style] = {
-    import quotes.reflect._
-    def rec(tree: Term): Option[Expr[String]] = tree match {
-      case Apply(Ident("_styleName"), List(e)) => Some(e.asExprOf[String])
-      case Block(List(), e) => rec(e)
-      case Typed(e, _) => rec(e)
-      case Inlined(_, List(), e) => rec(e)
-      case _  => None
-    }
-    rec(Term.of(name)).flatMap(_.unlift) match
-      case Some(name: String) => value.unlift match 
-        case Some(value: String) => stick_style(str(name + ": " + escape(value) + "; "))
-        case _ => stick_style(stick_splice(str(name + ": "), '{escape(${value})}, str("; ")))
-      case _ => stylePxMacro(name, value)
+  private def styleMacro(name: Expr[StyleName], setTo: Expr[String])(using Quotes): Expr[Style] = {
+    val (n, doPx) = unstick_styleName(name)
+    setTo.value match 
+      case Some(setTo: String) => stick_style(n.str + ": " + escape(setTo) + (if doPx then "px;" else ";"))
+      case _ => stick_style(stick_splice(n.str + ": ", '{escape($setTo)}, if doPx then "px;" else ";"))
   }
-  private def stylePxMacro(name: Expr[StyleName], value: Expr[String])(using Quotes): Expr[Style] = {
-    import quotes.reflect._
-    def rec(tree: Term): Option[Expr[String]] = tree match {
-      case Apply(Ident("_styleNamePx"), List(e)) => Some(e.asExprOf[String])
-      case Block(List(), e) => rec(e)
-      case Typed(e, _) => rec(e)
-      case Inlined(_, List(), e) => rec(e)
-      case _  => None
-    }
-    rec(Term.of(name)).flatMap(_.unlift) match
-      case Some(name: String) => value.unlift match 
-        case Some(value: String) => stick_style(str(name + ": " + escape(value) + "px; "))
-        case _ => stick_style(stick_splice(str(name + ": "), '{escape(${value})}, str("px; ")))
-      case _ => report.error("Style name must be static."); stick_style(str(""))
-  }
-
-  extension (inline tag: Unescaped) inline def render(): String = ${ renderMacro('tag) }
-  private def renderMacro(tag: Expr[Unescaped])(using Quotes): Expr[String] = 
-    import quotes.reflect._
-    tag match {
-      case '{ _sticky._unescaped(_sticky._splice(${BetterVarargs(parts)}: _*)) } => {
-        ValDef.let(Symbol.spliceOwner, "sb", Term.of('{ new StringBuilder() }))((sb: Ident) => Block(
-          parts.map(s => Select.overloaded(sb, "append", List(TypeRepr.of[String]), List(Term.of(s)))).toList,
-          Apply(Select.unique(sb, "toString"), List())
-        )).asExprOf[String]
-      }
-      case '{ _sticky._unescaped(${Const(s: String)}) } => str(s)
-      case _ => report.error("Invalid tag"); Expr("")
-    }*/
 
 }

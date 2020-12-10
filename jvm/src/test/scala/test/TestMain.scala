@@ -1,7 +1,7 @@
 package test
 
-import scalatags.Text.all._
-//import dottytags.Core._
+//import scalatags.Text.all._
+import dottytags.Core._
 
 object Main {
 
