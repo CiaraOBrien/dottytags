@@ -2,6 +2,7 @@ package test
 
 //import scalatags.Text.all._
 import dottytags.Core._
+import dottytags.Tags._
 
 object Main {
 
@@ -14,6 +15,38 @@ object Main {
     //println(print(cssPx("background-color") := "red"))
 
     //tagSelfClosing("bruh")(Seq(attr("class") := "bruh", css("color") := "red"), cssPx("height") := "100")
+
+    html(attr("class") := "bruh", css("href") := "lol", css("wow") := "wowie")("bruh", System.currentTimeMillis.toString, raw("<"))
+
+    val numVisitors = 1023
+      val posts = Seq(
+        ("alice", "i like pie"),
+        ("bob", "pie is evil i hate you"),
+        ("charlie", "i like pie and pie is evil, i hat myself")
+      )
+
+      /*html()(
+        head()(
+          script()("some script")
+        ),
+        body()(
+          h1()("This is my title"),
+          div()("posts"),
+          frag(for ((name, text) <- posts) yield div()(
+            h2()("Post by ", name),
+            p()(text)
+          )),
+          frag(if numVisitors > 100 then p()("No more posts!")
+          else p()("Please post below..."))
+        )
+      )*/
+      if numVisitors > 100 then p()("No more posts!")
+          else p()("Please post below...")
+
+          for ((name, text) <- posts) yield div()(
+            h2()("Post by ", name),
+            p()(text)
+          )
 
     //assert(capitalize("abc1_") == "ABC1_")
     //assert(Escape.isValidTag("abc1."))
