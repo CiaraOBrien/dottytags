@@ -13,21 +13,7 @@ object Main {
     //println(print(css("background-color") := "red"))
     //println(print(cssPx("background-color") := "red"))
 
-    println(
-      tag("html")(
-        tag("head")(
-          tag("script")("console.log(2)")
-        ),
-        tag("body")(
-          tag("h1")(css("color") := "red", "title"),
-          tag("div")(css("backgroundColor") := "blue",
-            tag("a")(attr("href") := "www.google.com", 
-              tag("p")("Goooogle")
-            )
-          )
-        )
-      )
-    )
+    //tagSelfClosing("bruh")(Seq(attr("class") := "bruh", css("color") := "red"), cssPx("height") := "100")
 
     //assert(capitalize("abc1_") == "ABC1_")
     //assert(Escape.isValidTag("abc1."))

@@ -18,7 +18,7 @@ object BetterVarargs {
 
   def apply[T](xs: Seq[Expr[T]])(using Type[T])(using Quotes): Expr[Seq[T]] = {
     import quotes.reflect._
-    Repeated(xs.map(Term.of(_)).toList, TypeTree.of[T]).asExpr.asInstanceOf[Expr[Seq[T]]]
+    Repeated(xs.map(_.asTerm).toList, TypeTree.of[T]).asExpr.asInstanceOf[Expr[Seq[T]]]
   }
 
   def unapply[T](expr: Expr[Seq[T]])(using Quotes): Option[Seq[Expr[T]]] = {
@@ -30,7 +30,7 @@ object BetterVarargs {
       case Inlined(_, List(), e) => rec(e)
       case _  => None
     }
-    rec(Term.of(expr))
+    rec(expr.asTerm)
   }
 
 }

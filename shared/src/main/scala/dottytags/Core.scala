@@ -2,6 +2,7 @@ package dottytags
 
 import scala.quoted._
 import scala.annotation.targetName
+import scala.unchecked
 import scala.language.implicitConversions
 
 object Core {
@@ -21,44 +22,51 @@ object Core {
     def _tagName    (s: String, sc: Boolean): TagName   = s
     def _tag        (s: String): Tag                    = s
     implicit def _frag (s: Seq[Modifier]): Frag         = s.mkString("")
-    opaque type AttrName  = String
-    opaque type Attr      = String
-    opaque type StyleName = String
-    opaque type Style     = String
-    opaque type Raw       = String
-    opaque type TagName   = String
-    opaque type Tag       = String
-    opaque type Frag      = String
-    type Modifier         = String | Attr | Style | Raw | Tag | Frag
+    opaque type AttrName              = String
+    opaque type Attr      <: Modifier = String
+    opaque type StyleName             = String
+    opaque type Style     <: Modifier = String
+    opaque type Raw       <: Modifier = String
+    opaque type TagName               = String
+    opaque type Tag       <: Modifier = String
+    opaque type Frag      <: Modifier = String
+    type Modifier >: String
   }
 
-  export _sticky.{AttrName, Attr, StyleName, Style, Raw, TagName, Tag, Frag, Modifier, given}
+  export _sticky.{AttrName, Attr, StyleName, Style, Raw, TagName, Tag, Frag, Modifier, _frag}
   
   private trait Span
   private case class Static(str: String) extends Span
   private case class Dynamic(expr: Expr[String]) extends Span
-  private case class Splice(parts: Seq[Span]) extends Span {
-    def flatten: Splice = Splice(parts.flatMap(_ match
-      case s: Static => Seq(s)
-      case d: Dynamic => Seq(d)
-      case sp: Splice => sp.flatten.parts
-      ))
+  private case class Splice(parts: List[Span]) {
     def +(s: Span): Splice = Splice(s match
       case Static(s) => parts.headOption match 
-        case Some(Static(s1)) => Static(s1 + s) +: parts 
-        case Some(Dynamic(_)) => Static(s) +: parts
-        case _ => Seq(Static(s))
-      case d @ Dynamic(_) => d +: parts
-      case Splice(ps) => ps.foldLeft(this)((acc, p) => acc + p).parts
+        case Some(Static(s1)) => Static(s1 + s) :: parts.tail
+        case Some(Dynamic(_)) => Static(s)      :: parts
+        case _                => Static(s)      :: Nil
+      case d: Dynamic         => d              :: parts
     )
+    def :+(s: Span): Splice = Splice(s match
+      case Static(s) => parts.lastOption match 
+        case Some(Static(s1)) => parts.init     :+ Static(s + s1)
+        case Some(Dynamic(_)) => parts          :+ Static(s)
+        case _                => Static(s)      :: Nil
+      case d: Dynamic         => parts          :+ d
+    )
+    def ++(s: Splice): Splice = s.parts.foldLeft(this)((acc, s) => acc + s)
     def exprs(using Quotes): Seq[Expr[String]] = parts.collect {
       case Static(str) => Expr(str)
       case Dynamic(expr) => expr
     }
+    def stripTrailingSpace: Splice = Splice(parts.headOption match
+      case Some(Static(s)) => Static(s.stripSuffix(" ")) :: parts.tail
+      case _ => parts
+    )
   }
+  private def unstick_splice(s: Expr[String])(using Quotes): Splice = s match 
+    case '{ _sticky._splice(${BetterVarargs(parts)}: _*) } => Splice(parts.map(unstick_string).toList)
   private def unstick_string(s: Expr[String])(using Quotes): Span = s match 
     case Expr(s: String) => Static(s)
-    case '{ _sticky._splice(${BetterVarargs(parts)}: _*) } => Splice(parts.map(unstick_string))
     case dyn: Expr[String] => Dynamic(dyn)
   private def unstick_attrName(s: Expr[AttrName])(using Quotes): Static = s match 
     case '{ _sticky._attrName(${Expr(s: String)}) } => Static(s)
@@ -135,20 +143,23 @@ object Core {
     val (nstr, selfClosing) = unstick_tagName(name)
     args match
       case BetterVarargs(args) => 
-        var attrsSplice = Splice(Seq(Static(s"<$nstr ")))
-        var stylesSplice = Splice(Seq())
-        var bodySplice = Splice(Seq())
-        def iter(args: Seq[Expr[Modifier]]): Unit = {
-          args.foreach(a =>
-            if a.isExprOf[Attr] then attrsSplice = attrsSplice + unstick_attr(a.asExprOf[Attr])
-            else if a.isExprOf[Style] then stylesSplice = stylesSplice + unstick_style(a.asExprOf[Style])
-            else if a.isExprOf[String] then bodySplice = bodySplice + unstick_string(a.asExprOf[String])
-            else if a.isExprOf[Raw] then bodySplice = bodySplice + unstick_raw(a.asExprOf[Raw])
-            else if a.isExprOf[Tag] then bodySplice = bodySplice + unstick_tag(a.asExprOf[Tag])
-            else if a.isExprOf[Frag] then iter(unstick_frag(a.asExprOf[Frag])))
-        }
+        var attrsSplice = Splice(List(Static(s"<${nstr.str} ")))
+        var stylesSplice = Splice(Nil)
+        var bodySplice = Splice(Nil)
+        def iter(as: Seq[Expr[Modifier]]): Unit = as.foreach(_ match 
+            case '{_sticky._attr($s)}  => attrsSplice  = attrsSplice  + unstick_string(s)
+            case '{_sticky._style($s)} => stylesSplice = stylesSplice + unstick_string(s)
+            case '{_sticky._raw($s)}   => bodySplice   = bodySplice   + unstick_string(s)
+            case '{_sticky._tag($s)}   => bodySplice   = bodySplice   + unstick_string(s)
+            case '{_frag(Seq(${BetterVarargs(s)}: _*))} => iter(s)
+            case '{_frag(${e: Expr[Seq[Modifier]]})} => 
+            case e: Expr[String] => bodySplice = bodySplice + unstick_string(e)
+            case e => error("Error: " + e.show))
         iter(args)
-        stick_tag(stick_splice((attrsSplice + stylesSplice + bodySplice).exprs: _*))
+        if stylesSplice.parts.nonEmpty then stylesSplice = (stylesSplice :+ Static("style=\"")).stripTrailingSpace + Static("\"")
+        if bodySplice.parts.isEmpty then bodySplice = bodySplice + Static(if selfClosing then "/>" else s"></${nstr.str}>")
+        else (bodySplice :+ Static(">")) + Static(s"</${nstr.str}>")
+        stick_tag(stick_splice((attrsSplice ++ stylesSplice ++ bodySplice).exprs: _*))
       case _ => error("Varargs was somehow not varargs")
                 
   inline def raw(inline raw: String): Raw = ${ rawMacro('raw) }
@@ -171,16 +182,16 @@ object Core {
   private def attrMacro(name: Expr[AttrName], setTo: Expr[String])(using Quotes): Expr[Attr] = {
     val n = unstick_attrName(name)
     setTo.value match 
-      case Some(setTo: String) => stick_attr(n.str + "=\"" + escape(setTo) + "\"")
-      case _ => stick_attr(stick_splice(n.str + "=\"", '{escape($setTo)}, "\""))
+      case Some(setTo: String) => stick_attr(n.str + "=\"" + escape(setTo) + "\" ")
+      case _ => stick_attr(stick_splice(n.str + "=\"", '{escape($setTo)}, "\" "))
   }
   
   extension (inline name: StyleName) @targetName("setStyle") inline def :=(inline value: String): Style = ${ styleMacro('name, 'value) }
   private def styleMacro(name: Expr[StyleName], setTo: Expr[String])(using Quotes): Expr[Style] = {
     val (n, doPx) = unstick_styleName(name)
     setTo.value match 
-      case Some(setTo: String) => stick_style(n.str + ": " + escape(setTo) + (if doPx then "px;" else ";"))
-      case _ => stick_style(stick_splice(n.str + ": ", '{escape($setTo)}, if doPx then "px;" else ";"))
+      case Some(setTo: String) => stick_style(n.str + ": " + escape(setTo) + (if doPx then "px; " else "; "))
+      case _ => stick_style(stick_splice(n.str + ": ", '{escape($setTo)}, if doPx then "px; " else "; "))
   }
 
 }
