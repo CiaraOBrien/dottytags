@@ -7,14 +7,14 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 	.in(file("."))
 	.settings (
 		name := "dottytags",
-		version := "0.1.0",
-		scalaVersion := "3.0.0-M2",
+		version := "0.2.0",
+		scalaVersion := dottyLatestNightlyBuild.get,
 		scalacOptions ++= Seq(
 			"-source:3.1-migration", "-indent", "-new-syntax",
 			"-Yexplicit-nulls", "-Ycheck-init", "-language:strictEquality", 
 		),
-		libraryDependencies += "com.lihaoyi" %% "utest" % "0.7.5" % "test",
-		testFrameworks += new TestFramework("utest.runner.Framework"),
+		//libraryDependencies += "com.lihaoyi" % "utest_3.0.0-M2" % "0.7.5" % "test",
+		//testFrameworks += new TestFramework("utest.runner.Framework"),
 	)
 	.jvmSettings (
 		libraryDependencies += "com.lihaoyi" % "scalatags_2.13" % "0.9.2" % "test",

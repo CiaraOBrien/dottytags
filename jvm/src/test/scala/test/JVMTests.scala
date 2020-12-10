@@ -1,7 +1,6 @@
 package dottytags
 
-import utest._
-import dottytags.Core._
+/*import utest._
 
 object JVMTests extends TestSuite {
   val tests = Tests {
@@ -11,4 +10,4 @@ object JVMTests extends TestSuite {
       //assert(!Escape.isValidTag(capitalize("abc_")))
     }
   }
-}
+}*/

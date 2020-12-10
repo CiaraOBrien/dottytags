@@ -10,7 +10,7 @@ object Core {
     * which do not make it into the final output and which should not be used by the calling
     * code (hence the mangled names)
     */
-  object _sticky {
+  /*object _sticky {
     def _splice(parts: String*): String = parts.mkString("")
     def _attrName   (s: String): AttrName  = s
     def _attr       (s: String): Attr      = s
@@ -220,6 +220,6 @@ object Core {
       }
       case '{ _sticky._unescaped(${Const(s: String)}) } => str(s)
       case _ => report.error("Invalid tag"); Expr("")
-    }
+    }*/
 
 }

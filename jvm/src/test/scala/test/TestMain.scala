@@ -1,7 +1,7 @@
 package test
 
-//import scalatags.Text.all._
-import dottytags.Core._
+import scalatags.Text.all._
+//import dottytags.Core._
 
 object Main {
 
@@ -16,7 +16,7 @@ object Main {
     println(
       tag("html")(
         tag("head")(
-          tag("script")("console.log(1)")
+          tag("script")("console.log(2)")
         ),
         tag("body")(
           tag("h1")(css("color") := "red", "title"),
