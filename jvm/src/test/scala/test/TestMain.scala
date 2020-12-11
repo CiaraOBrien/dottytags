@@ -16,7 +16,7 @@ object Main {
 
     //tagSelfClosing("bruh")(Seq(attr("class") := "bruh", css("color") := "red"), cssPx("height") := "100")
 
-    html(attr("class") := "bruh", css("href") := "lol", css("wow") := "wowie")("bruh", System.currentTimeMillis.toString, raw("<"))
+    html(attr("class") := "bruh", css("href") := "lol", css("wow") := "wowie", "bruh", System.currentTimeMillis.toString, raw("<"))
 
     val numVisitors = 1023
       val posts = Seq(
@@ -25,28 +25,22 @@ object Main {
         ("charlie", "i like pie and pie is evil, i hat myself")
       )
 
-      /*html()(
-        head()(
-          script()("some script")
-        ),
-        body()(
-          h1()("This is my title"),
-          div()("posts"),
-          frag(for ((name, text) <- posts) yield div()(
-            h2()("Post by ", name),
-            p()(text)
-          )),
-          frag(if numVisitors > 100 then p()("No more posts!")
-          else p()("Please post below..."))
-        )
-      )*/
-      if numVisitors > 100 then p()("No more posts!")
-          else p()("Please post below...")
+      println(html(
+        head(
+          script("some script")
 
-          for ((name, text) <- posts) yield div()(
-            h2()("Post by ", name),
-            p()(text)
-          )
+        ),
+        body(
+          h1("This is my <<<< title", css("weight") := "bold"),
+          div("posts"),
+          bind(for ((name, text) <- posts) yield div(
+            h2("Post by ", name),
+            p(text)
+          )),
+          attr("class") := "test",
+          if numVisitors > 100 then p("No more posts!")
+          else p("Please post below...")
+      )))
 
     //assert(capitalize("abc1_") == "ABC1_")
     //assert(Escape.isValidTag("abc1."))

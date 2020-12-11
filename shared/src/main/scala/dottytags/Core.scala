@@ -15,16 +15,26 @@ object Core {
     */
   object _sticky {
     def _splice(parts: String*): String = parts.mkString("")
-    def _attr       (s: String): Attr                   = s
-    def _style      (s: String): Style                  = s
-    def _raw        (s: String): Raw                    = s
-    def _tag        (s: String): Tag                    = s
-    def _frag (s: Seq[Element]): Frag                   = s.mkString("")
-    opaque type Attr       = String
-    opaque type Style      = String
-    opaque type Raw        = String
-    opaque type Tag        = String
-    opaque type Frag       = String
+    def _attr       (s: String): Attr                   = new Attr(s)
+    def _style      (s: String): Style                  = new Style(s)
+    def _raw        (s: String): Raw                    = new Raw(s)
+    def _tag        (s: String): Tag                    = new Tag(s)
+    def _frag (s: Seq[Element]): Frag                   = new Frag(s)
+    final class Attr private[_sticky] (val str: String) {
+      override def toString = str
+    }
+    final class Style private[_sticky] (val str: String) {
+      override def toString = str
+    }
+    final class Raw private[_sticky] (val str: String) {
+      override def toString = str
+    }
+    final class Tag private[_sticky] (val str: String) {
+      override def toString = str
+    }
+    final class Frag private[_sticky] (val s: Seq[Element]) {
+      override def toString = s.mkString("")
+    }
     type Modifier = Attr | Style
     type Entity = Modifier | Element
     type Element = Raw   | Tag | Frag | String
@@ -51,7 +61,7 @@ object Core {
         case _                => parts.prepended(Static(s))
       case d: Dynamic         => parts.prepended(d)
     )
-    def concat(s: Splice): Splice = Splice(this.parts.concat(s.parts))
+    def concat(s: Splice): Splice = s.parts.foldLeft(this)((acc, p) => acc.append(p))
     def exprs(using Quotes): Seq[Expr[String]] = parts.collect {
       case Static(str) => Expr(str)
       case Dynamic(expr) => expr
@@ -63,6 +73,8 @@ object Core {
   }
   private def unstick_splice(s: Expr[String])(using Quotes): Splice = s match 
     case '{ _sticky._splice(${BetterVarargs(parts)}: _*) } => Splice(parts.map(unstick_string))
+    case '{ _sticky._splice($part) } => Splice(Seq(unstick_string(part)))
+    case e => error(e.show)
   private def unstick_string(s: Expr[String])(using Quotes): Span = s match 
     case Expr(s: String) => Static(s)
     case dyn: Expr[String] => Dynamic(dyn)
@@ -83,7 +95,9 @@ object Core {
     case '{ _sticky._frag(Seq[Element](${BetterVarargs(parts)}: _*)) } => parts
     case _ => error("Illegally-obtained Frag value")
 
-  private def stick_splice(parts: Expr[String]*)(using Quotes): Expr[String]  = '{ _sticky._splice(${Varargs(parts)}: _*) }
+  private def stick_splice(parts: Expr[String]*)(using Quotes): Expr[String]  = 
+    if parts.length == 1 then parts.head
+    else '{ _sticky._splice(${Varargs(parts)}: _*) }
   private def stick_attr     (s: Expr[String])                   (using Quotes): Expr[Attr]      = '{ _sticky._attr($s) }
   private def stick_style    (s: Expr[String])                   (using Quotes): Expr[Style]     = '{ _sticky._style($s) }
   private def stick_raw      (s: Expr[String])                   (using Quotes): Expr[Raw]       = '{ _sticky._raw($s) }
@@ -113,8 +127,11 @@ object Core {
     pprint(s.asTerm)
     s
 
-  extension (inline cl: TagClass) inline def apply(inline mods: Modifier*)(inline elems: Element*): Tag = ${ tagMacro('cl)('mods)('elems) }
-  private def tagMacro(cl: Expr[TagClass])(mods: Expr[Seq[Modifier]])(elems: Expr[Seq[Element]])(using Quotes): Expr[Tag] = 
+  
+  extension (inline cl: TagClass) inline def apply(inline args: Entity*): Tag = ${ tagMacro('cl)('args) }
+  //extension (inline cl: TagClass) @targetName("elemsOnly") inline def apply(inline elems: Element*): Tag = ${ tagMacro('cl)('{Seq()})('elems) }
+  //extension (inline cl: TagClass) @targetName("modsAndElems") inline def apply(inline mods: Modifier*)(inline elems: Element*): Tag = ${ tagMacro('cl)('mods)('elems) }
+  private def tagMacro(cl: Expr[TagClass])(args: Expr[Seq[Entity]])(using Quotes): Expr[Tag] = 
     import quotes.reflect._
     val cls = cl.value.getOrElse(error("Tag class must be static."))
     val sname = cls.name
@@ -122,50 +139,67 @@ object Core {
     var attrsSplice = Splice(List(Static(s"<$sname ")))
     var stylesSplice = Splice(Nil)
     var bodySplice = Splice(Nil)
-    mods match
+    args match
       case BetterVarargs(args) => 
+        def iter(as: Seq[Expr[Element]], careAboutEscaping: Boolean = true): Unit = as.foreach(_ match 
+          case '{_sticky._raw(_sticky._splice($s))}  => bodySplice  = bodySplice.concat(unstick_splice(s))
+          case '{_sticky._raw($s)}   => bodySplice   = bodySplice.append(unstick_string(s))
+          case '{_sticky._tag(_sticky._splice($s))}   => bodySplice   = bodySplice.concat(unstick_splice(s))
+          case '{_sticky._tag($s)}   => bodySplice   = bodySplice.append(unstick_string(s))
+          case '{_sticky._frag(${BetterVarargs(s)})} => iter(s, careAboutEscaping = false)
+          case '{_sticky._frag(${e: Expr[Seq[Element]]})} => bodySplice = bodySplice.append(Dynamic('{($e.mkString(""))}))
+          case '{$e: Tag} => bodySplice = bodySplice.append(Dynamic('{$e.str}))
+          case '{$e: Raw} => bodySplice = bodySplice.append(Dynamic('{$e.str}))
+          case '{$e: String} => if careAboutEscaping then bodySplice = bodySplice.append(unstick_string(e) match 
+            case Static(str) => Static(escape(str))
+            case Dynamic(e) => Dynamic('{escape($e)})) else bodySplice = bodySplice.append(unstick_string(e))
+          case e => error("Error: " + e.show)
+        )
         args.foreach(_ match 
             case '{_sticky._attr(_sticky._splice($s))}  => attrsSplice  = attrsSplice.concat(unstick_splice(s))
             case '{_sticky._attr($s)}  => attrsSplice  = attrsSplice.append(unstick_string(s))
             case '{_sticky._style(_sticky._splice($s))} => stylesSplice = stylesSplice.concat(unstick_splice(s))
             case '{_sticky._style($s)} => stylesSplice = stylesSplice.append(unstick_string(s))
-            case e => error("Error: " + e.show))
-        if stylesSplice.parts.nonEmpty then stylesSplice = (stylesSplice.prepend(Static("style=\""))).stripTrailingSpace.append(Static("\""))
-      case _ => error("Varargs was somehow not varargs")
-      if attrsSplice.parts.nonEmpty && stylesSplice.parts.isEmpty then attrsSplice = attrsSplice.stripTrailingSpace
-    elems match 
-      case BetterVarargs(args) =>
-        def iter(as: Seq[Expr[Element]]): Unit = as.foreach(_ match 
             case '{_sticky._raw(_sticky._splice($s))}  => bodySplice  = bodySplice.concat(unstick_splice(s))
             case '{_sticky._raw($s)}   => bodySplice   = bodySplice.append(unstick_string(s))
             case '{_sticky._tag(_sticky._splice($s))}   => bodySplice   = bodySplice.concat(unstick_splice(s))
             case '{_sticky._tag($s)}   => bodySplice   = bodySplice.append(unstick_string(s))
-            case '{_sticky._frag(${BetterVarargs(s)})} => iter(s)
+            case '{_sticky._frag(${BetterVarargs(s)})} => iter(s, careAboutEscaping = false)
             case '{_sticky._frag(${e: Expr[Seq[Element]]})} => bodySplice = bodySplice.append(Dynamic('{($e.mkString(""))}))
-            case e: Expr[String] => bodySplice = bodySplice.append(unstick_string(e) match 
+            case '{$e: Tag} => bodySplice = bodySplice.append(Dynamic('{$e.str}))
+            case '{$e: Raw} => bodySplice = bodySplice.append(Dynamic('{$e.str}))
+            case '{$e: String} => bodySplice = bodySplice.append(unstick_string(e) match 
               case Static(str) => Static(escape(str))
-              case Dynamic(e) => Dynamic('{escape($e)})
-            )
+              case Dynamic(e) => Dynamic('{escape($e)}))
             case e => error("Error: " + e.show))
-        iter(args)
+        if stylesSplice.parts.nonEmpty then stylesSplice = (stylesSplice.prepend(Static("style=\""))).stripTrailingSpace.append(Static("\""))
+        if attrsSplice.parts.nonEmpty && stylesSplice.parts.isEmpty then attrsSplice = attrsSplice.stripTrailingSpace
         if bodySplice.parts.isEmpty then bodySplice = bodySplice.append(Static(if selfClosing then "/>" else s"></$sname>"))
         else bodySplice = bodySplice.append(Static(s"</$sname>"))
              stylesSplice = stylesSplice.append(Static(">"))
         stick_tag(stick_splice((Splice(Seq()).concat(attrsSplice).concat(stylesSplice).concat(bodySplice)).exprs: _*))
+      case _ => error("Varargs was somehow not varargs")
                 
   inline def raw(inline raw: String): Raw = ${ rawMacro('raw) }
   private def rawMacro(raw: Expr[String])(using Quotes): Expr[Raw] = stick_raw(raw)
 
+  //implicit line def seq2frag[T <: Core.Element](seq: Seq[T]): Core.Element = Core.frag(seq)
   inline def frag(inline elems: Element*): Frag = ${ fragMacro('elems) }
+  inline def bind(inline elem: Raw | Frag | Tag): Frag = ${ bindMacro('elem) }
+  inline def bind(inline elems: Seq[Raw | Frag | Tag]): Frag = ${ bindMacroSeq('elems) }
   private def fragMacro(elems: Expr[Seq[Element]])(using Quotes): Expr[Frag] = elems match 
     case BetterVarargs(as) => stick_frag(BetterVarargs(as.map(a => a match 
-      case '{_sticky._raw($_)}  => a
-      case '{_sticky._tag($_)}  => a
-      case '{_sticky._frag($_)} => a
-      case e: Expr[String] => unstick_string(e) match 
+      case '{$e: Raw}  => a
+      case '{$e: Frag} => a
+      case '{$e: Tag}  => a
+      case '{$e: String} => unstick_string(e) match 
         case Static(str) => Expr(escape(str))
-        case Dynamic(e) =>'{escape($e)}
-      )))
+        case Dynamic(e) => '{escape($e)}
+      case e => error("The dynamic expression \"" + e.show + "\" needs to be bound with bind() before you can use it.")
+    )))
+  private def bindMacro(elem: Expr[Raw | Frag | Tag])(using Quotes): Expr[Frag] = stick_frag(BetterVarargs(Seq(elem)))
+  private def bindMacroSeq(elems: Expr[Seq[Raw | Frag | Tag]])(using Quotes): Expr[Frag] = stick_frag(elems)
+    
   
   extension (inline attr: AttrClass) @targetName("setAttr") inline def :=(inline value: String): Attr = ${ attrMacro('attr, 'value) }
   private def attrMacro(attr: Expr[AttrClass], setTo: Expr[String])(using Quotes): Expr[Attr] = {
