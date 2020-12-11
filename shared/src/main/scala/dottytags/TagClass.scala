@@ -1,6 +1,7 @@
 package dottytags
 
 import scala.quoted._
+import Core._
 
 object TagClass {
 

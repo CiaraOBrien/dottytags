@@ -1,7 +1,6 @@
 package dottytags
 
-import dottytags.TagClass._
-import scala.quoted._
+import TagClass._
 
 object Tags {
 
@@ -93,5 +92,42 @@ object Tags {
   inline def optgroup = tag("optgroup")
   inline def option = tag("option")
   inline def textarea = tag("textarea")
+  inline def title = tag("title")
+  inline def style = tag("style")
+  // Scripting
+  inline def noscript = tag("noscript")
+  // Sections
+  inline def section = tag("section")
+  inline def nav = tag("nav")
+  inline def article = tag("article")
+  inline def aside = tag("aside")
+  inline def address = tag("address")
+  inline def main = tag("main")
+  // Text level semantics
+  inline def q = tag("q")
+  inline def dfn = tag("dfn")
+  inline def abbr = tag("abbr")
+  inline def data = tag("data")
+  inline def time = tag("time")
+  inline def `var` = tag("var")
+  inline def samp = tag("samp")
+  inline def kbd = tag("kbd")
+  inline def math = tag("math")
+  inline def mark = tag("mark")
+  inline def ruby = tag("ruby")
+  inline def rt = tag("rt")
+  inline def rp = tag("rp")
+  inline def bdi = tag("bdi")
+  inline def bdo = tag("bdo")
+  // Forms
+  inline def keygen = tag("keygen", sc = true)
+  inline def output = tag("output")
+  inline def progress = tag("progress")
+  inline def meter = tag("meter")
+  // Interactive elements
+  inline def details = tag("details")
+  inline def summary = tag("summary")
+  inline def command = tag("command", sc = true)
+  inline def menu = tag("menu")
 
 }

@@ -3,6 +3,7 @@ package test
 //import scalatags.Text.all._
 import dottytags.Core._
 import dottytags.Tags._
+import dottytags.Attrs._
 
 object Main {
 
@@ -16,7 +17,7 @@ object Main {
 
     //tagSelfClosing("bruh")(Seq(attr("class") := "bruh", css("color") := "red"), cssPx("height") := "100")
 
-    html(attr("class") := "bruh", css("href") := "lol", css("wow") := "wowie", "bruh", System.currentTimeMillis.toString, raw("<"))
+    html(cls := "bruh", href := "lol", css("wow") := "wowie", "bruh", System.currentTimeMillis.toString, raw("<"))
 
     val numVisitors = 1023
       val posts = Seq(
@@ -25,22 +26,33 @@ object Main {
         ("charlie", "i like pie and pie is evil, i hat myself")
       )
 
-      println(html(
+      def calc() = html(
         head(
           script("some script")
 
         ),
         body(
-          h1("This is my <<<< title", css("weight") := "bold"),
+          h1("This is my <<<< title", cssPx("weight") := "bold"),
           div("posts"),
           bind(for ((name, text) <- posts) yield div(
             h2("Post by ", name),
             p(text)
           )),
-          attr("class") := "test",
+          cls := "test",
           if numVisitors > 100 then p("No more posts!")
           else p("Please post below...")
-      )))
+      )).toString
+
+    val start = System.currentTimeMillis()
+        var i = 0
+        val d = 10000
+
+        while(System.currentTimeMillis() - start < d) do {
+          i += 1
+          calc()
+        }
+
+        println(i + " in " + d)
 
     //assert(capitalize("abc1_") == "ABC1_")
     //assert(Escape.isValidTag("abc1."))

@@ -1,11 +1,12 @@
 package dottytags
 
 import scala.quoted._
+import Core._
 
 object AttrClass {
 
   final class AttrClass (val name: String) {
-  
+    
   }
 
   inline def attr(inline name: String): AttrClass = ${ attrValidateMacro('name) }
