@@ -6,6 +6,11 @@ import scala.unchecked
 import scala.language.implicitConversions
 import scala.collection.mutable.ArrayBuffer
 
+import TagClass._
+import StyleClass._
+import AttrClass._
+
+
 object Core {
 
   /** 
@@ -176,10 +181,6 @@ object Core {
     case f: Frag   => _sticky._splice(f.s.map(_sticky._renderOutOfLine): _*)
     case s: String => s
     case _         => _sticky._renderOutOfLine(e)
-    
-  export TagClass.{_, given}
-  export AttrClass.{_, given}
-  export StyleClass.{_, given}
 
   /**
     * Private convenience method for erroring out during macro expansion.
@@ -437,5 +438,10 @@ object Core {
     * @see [[_sticky._pxifyOutOfLine]]
     */
   private def pxifyDynamic(s: Expr[String], px: Boolean)(using Quotes): Expr[String] = if px then '{ _sticky._pxifyOutOfLine($s) } else s
+
+  
+  inline def concatStrLits(inline str1: String, inline str2: String): String = ${ concatStrLitsMacro('str1, 'str2) }
+  private def concatStrLitsMacro(str1: Expr[String], str2: Expr[String])(using Quotes): Expr[String] = 
+    Expr(str1.value.getOrElse(error("str1 must be static.")) + str2.value.getOrElse(error("str2 must be static.")))
 
 }

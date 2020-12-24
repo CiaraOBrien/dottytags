@@ -13,8 +13,8 @@ object StyleClass {
     * with a 'px' suffix, which will be automatically added if not present in your argument.
     * [[css]] makes non-px [[StyleClass!]]es, [[cssPx]] makes px ones.
     */
-  final class StyleClass (val name: String, val px: Boolean) {
-  
+  class StyleClass (val name: String, val px: Boolean) {
+    
   }
 
   /**

@@ -2,7 +2,11 @@ package dottytags
 
 import TagClass._
 
-// This whole file is, of course, derived from scalatags.
+/*
+ * This whole file is, of course, adapted from scalatags (see LICENSE for copyright notice):
+ * https://github.com/lihaoyi/scalatags/blob/master/scalatags/src/scalatags/generic/Tags.scala
+ * https://github.com/lihaoyi/scalatags/blob/master/scalatags/src/scalatags/generic/Tags2.scala
+ */
 
 object Tags {
 

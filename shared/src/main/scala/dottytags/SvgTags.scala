@@ -2,7 +2,18 @@ package dottytags
 
 import TagClass._
 
-// This whole file is, of course, derived from scalatags.
+/*
+ * Documentation marked "MDN" is thanks to Mozilla Contributors
+ * at https://developer.mozilla.org/en-US/docs/Web/API and available
+ * under the Creative Commons Attribution-ShareAlike v2.5 or later.
+ * http://creativecommons.org/licenses/by-sa/2.5/
+ *
+ * Everything else is under the MIT License, see here:
+ * https://github.com/CiaraOBrien/dottytags/blob/main/LICENSE
+ * 
+ * This whole file is, of course, adapted from scalatags (see LICENSE for copyright notice):
+ * https://github.com/lihaoyi/scalatags/blob/master/scalatags/src/scalatags/generic/SvgTags.scala
+ */
 
 object SvgTags {
 

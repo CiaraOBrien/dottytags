@@ -2,8 +2,12 @@ package test
 
 //import scalatags.Text.all._
 import dottytags.Core._
+import dottytags.TagClass._
+import dottytags.StyleClass._
+import dottytags.AttrClass._
 import dottytags.Tags._
 import dottytags.Attrs._
+import dottytags.Styles._
 
 object Main {
 
@@ -17,7 +21,7 @@ object Main {
 
     //tagSelfClosing("bruh")(Seq(attr("class") := "bruh", css("color") := "red"), cssPx("height") := "100")
 
-    println(html(cls := "foo", href := "bar", css("baz1") := "qux", "quux", System.currentTimeMillis.toString, css("baz2") := "qux", raw("a")).render)
+    println(html(cls := "foo", href := "bar", backgroundAttachment.fixed, "quux", System.currentTimeMillis.toString, css("baz2") := "qux", raw("a")).render)
 
     val numVisitors: Int = 1023
     val posts: Seq[(String, String)] = Seq(

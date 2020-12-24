@@ -2,6 +2,11 @@ package dottytags
 
 import java.io.StringWriter
 
+/*
+ * Most of this file is adapted from scalatags (see LICENSE for copyright notice):
+ * https://github.com/lihaoyi/scalatags/blob/master/scalatags/src/scalatags/Escaping.scala
+ */
+
 private val tagNameRegex   = "^[a-z][:\\w0-9-]*$".r
 private val attrNameRegex  = "^[a-zA-Z_:][-a-zA-Z0-9_:.]*$".r
 private val styleNameRegex = "^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$".r
@@ -12,8 +17,10 @@ private[dottytags] def camelCase(dashedString: String) = {
   val list = dashedString.split("-").nn.toList.map(_.nn)
   (list.head :: list.tail.map(s => s(0).toUpper.toString + s.drop(1))).mkString
 }
-/**
-  * Escapes a string for XML, apparently fast. Derived from scalatags.
+/** 
+  * Escapes a string for XML, apparently quite quickly, though it should usually not matter
+  * since this function should mostly be called at compile-time rather than at runtime.
+  * Lifted pretty much directly from scalatags' implementation. 
   */
 def escape(text: String): String = {
     val s = StringWriter(text.length())
