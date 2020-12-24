@@ -90,4 +90,17 @@ Any method call or variable access that can't be either inlined or elided breaks
 runtime-only black box, so pretty much all API methods have to be either "fake" -- existing only to enforce type relationships in the typechecking phase and then to be 
 elided as soon as the macros get their grubby mitts on them -- or `inline`, which poses several problems as `inline` is currently rather flaky in Scala 3, 
 especially when it comes to overriding things, since any remotely dynamic use of `inline override def`s leads to the inliner throwing up its hands and either erroring 
-out or silently falling back to an out-of-line method call, depending on whether the super-class `def` being overridden is `inline` or not. 
+out or silently falling back to an out-of-line method call, depending on whether the super-class `def` being overridden is `inline` or not.
+
+While this API architecture is more or less type-safe, not in the least because you can inspect and enforce invariants with macros, IDE support is very much
+not there yet (a statement that applies to Dotty as a whole). At the moment, any DottyTags call site is riddled with erroneous errors that have no relation
+to anything going on during actual compilation because apparently the presentation compiler doesn't play well with macros at all yet. Additionally, there are 
+some weird issues with the new regime of varargs ascription, which is why `bind(Seq[Element])` is separate from `frag(Element*)` for the time being.
+
+## Vague Goals
+- Make the internals more coherent by overhauling the core types (i.e. stop using my cursed "sticky note" paradigm and actually make some ADTs), which should also result in more elegance, safety, and extensibility
+- This would involve relaxing the up-front staticity requirements, but we could possibly make up for it with smarter macros
+- Switch to using `FromExpr` and `ToExpr` extractors more, they seem alright now that they're stabilized. I originally used lots of TASTy stuff, then I mostly switched to splice patterns since they're way nicer to work with.
+- Sort out `frag` and `bind`, possibly by eliminating them. This might require implicit conversions though, and I don't think it's possible at the moment to do inline implicit conversions based on previous experimentation.
+- If whitebox macros become a thing, I might be able to use their ~~black~~ white magic to obviate `frag`/`bind`
+- Add more type safety and convenience stuff to the builtins, especially CSS styles, e.g. numeric range enforcement (via macros), unit/datatype safety, colors, actual support for multi-styles like `border`
