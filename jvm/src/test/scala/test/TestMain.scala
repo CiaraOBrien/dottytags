@@ -21,9 +21,11 @@ object Main {
 
     //tagSelfClosing("bruh")(Seq(attr("class") := "bruh", css("color") := "red"), cssPx("height") := "100")
 
-    println(html(cls := "foo", href := "bar", backgroundAttachment.fixed, "quux", System.currentTimeMillis.toString, css("baz2") := "qux", raw("a")).render)
+    println(html(cls := "foo", href := "bar", css("baz1") := "qux", "quux", 
+      borderSpacing := ("horiz", "vert"), css("baz2") := "qux", raw("a")
+    ).render)
 
-    val numVisitors: Int = 1023
+    /*val numVisitors: Int = 1023
     val posts: Seq[(String, String)] = Seq(
       ("alice", "i like pie"),
       ("bob", "pie is evil i hate you"),
@@ -47,7 +49,10 @@ object Main {
         cls := "test",
         if numVisitors > 100 then p("No more posts!")
         else p("Please post below...")
-    )).render
+    )).render*/
+
+    val quux = "quux"
+    def calc() = html(cls := "foo", href := "bar", backgroundAttachment.fixed, quux, css("baz2") := "qux", raw("a")).render
 
     println(calc())
 
