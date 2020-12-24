@@ -3,6 +3,8 @@ package dottytags
 import AttrClass._
 import Core.{attr => _, _}
 
+// This whole file is, of course, derived from scalatags.
+
 /**
  * A trait for global attributes that are applicable to any HTML5 element. All traits that define Attrs should
  * derive from this trait since all groupings of attributes should include these global ones.

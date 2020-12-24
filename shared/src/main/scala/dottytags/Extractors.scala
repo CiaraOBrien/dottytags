@@ -2,18 +2,10 @@ package dottytags
 
 import scala.quoted._
 
-object ElideNoise {
-  def unapply[T](expr: Expr[T])(using Quotes, Type[T]): Option[Expr[T]] = 
-    import quotes.reflect._
-    def rec(t: Term)(using Quotes): Term = t match {
-      case Block(List(), t) => rec(t)
-      case Typed(t, _) => rec(t)
-      case Inlined(_, List(), t) => rec(t)
-      case _ => t
-    }
-    Some(rec(expr.asTerm).asExprOf[T])
-}
-
+/**
+  * [[scala.quoted.Varargs]] but better (that is, more versatile). This improvement has been merged
+  * into dotty, so when 3.0.0-RC1 is released, this will go away.
+  */
 object BetterVarargs {
 
   def apply[T](xs: Seq[Expr[T]])(using Type[T])(using Quotes): Expr[Seq[T]] = {

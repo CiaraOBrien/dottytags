@@ -8,7 +8,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 	.settings (
 		name := "dottytags",
 		version := "0.2.0",
-		scalaVersion := dottyLatestNightlyBuild.get,
+		scalaVersion := "3.0.0-M3",
 		scalacOptions ++= Seq(
 			"-source:3.1-migration", "-indent", "-new-syntax",
 			"-Yexplicit-nulls", "-Ycheck-init", "-language:strictEquality", 

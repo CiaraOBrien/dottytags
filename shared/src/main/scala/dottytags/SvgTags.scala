@@ -2,6 +2,8 @@ package dottytags
 
 import TagClass._
 
+// This whole file is, of course, derived from scalatags.
+
 object SvgTags {
 
   inline def altGlyph = tag("altGlyph")

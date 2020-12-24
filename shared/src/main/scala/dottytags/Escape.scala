@@ -12,7 +12,10 @@ private[dottytags] def camelCase(dashedString: String) = {
   val list = dashedString.split("-").nn.toList.map(_.nn)
   (list.head :: list.tail.map(s => s(0).toUpper.toString + s.drop(1))).mkString
 }
-private[dottytags] def escape(text: String): String = {
+/**
+  * Escapes a string for XML, apparently fast. Derived from scalatags.
+  */
+def escape(text: String): String = {
     val s = StringWriter(text.length())
     // Implemented per XML spec:
     // http://www.w3.org/International/questions/qa-controls

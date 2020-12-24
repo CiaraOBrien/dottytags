@@ -17,31 +17,35 @@ object Main {
 
     //tagSelfClosing("bruh")(Seq(attr("class") := "bruh", css("color") := "red"), cssPx("height") := "100")
 
-    html(cls := "bruh", href := "lol", css("wow") := "wowie", "bruh", System.currentTimeMillis.toString, raw("<"))
+    println(html(cls := "foo", href := "bar", css("baz1") := "qux", "quux", System.currentTimeMillis.toString, css("baz2") := "qux", raw("a")).render)
 
-    val numVisitors = 1023
-      val posts = Seq(
-        ("alice", "i like pie"),
-        ("bob", "pie is evil i hate you"),
-        ("charlie", "i like pie and pie is evil, i hat myself")
-      )
+    val numVisitors: Int = 1023
+    val posts: Seq[(String, String)] = Seq(
+      ("alice", "i like pie"),
+      ("bob", "pie is evil i hate you"),
+      ("charlie", "i like pie and pie is evil, i hat myself")
+    )
+    val bold: String = System.currentTimeMillis.toString
 
-      def calc() = html(
-        head(
-          script("some script")
+    def calc(): String = html(
+      head(
+        script("some script")
 
-        ),
-        body(
-          h1("This is my <<<< title", cssPx("weight") := "bold"),
-          div("posts"),
-          bind(for ((name, text) <- posts) yield div(
+      ),
+      body(
+        h1("This is my <<<< title", cssPx("weight") := System.currentTimeMillis.toString),
+        div("posts"),
+        bind(for ((name, text) <- posts) yield div(
             h2("Post by ", name),
             p(text)
           )),
-          cls := "test",
-          if numVisitors > 100 then p("No more posts!")
-          else p("Please post below...")
-      )).toString
+        frag(raw("<"), ">"),
+        cls := "test",
+        if numVisitors > 100 then p("No more posts!")
+        else p("Please post below...")
+    )).render
+
+    println(calc())
 
     val start = System.currentTimeMillis()
         var i = 0
@@ -53,6 +57,8 @@ object Main {
         }
 
         println(i + " in " + d)
+
+    //println(calc())
 
     //assert(capitalize("abc1_") == "ABC1_")
     //assert(Escape.isValidTag("abc1."))

@@ -5,10 +5,22 @@ import Core._
 
 object AttrClass {
 
+  /**
+    * Represents a valid name for an [[dottytags.Core.Attr]] 
+    * (that is, a string literal containing a valid XML attribute name).
+    * Make your own with [[attr]] or check out [[dottytags.Attrs]] for predefined ones.
+    * Unlike [[dottytags.StyleClass$.StyleClass!]] and [[dottytags.TagClass$.TagClass!]],
+    * this does not carry any extra configuration payload.
+    */ 
   final class AttrClass (val name: String) {
     
   }
 
+  /**
+    * Creates a static [[AttrClass!]], suitable for consumption by [[dottytags.Core.:=]].
+    * Macro expansion will fail if `name` is not a string literal or other static string value,
+    * or if `name` is not a valid XML attribute name.
+    */ 
   inline def attr(inline name: String): AttrClass = ${ attrValidateMacro('name) }
   private def attrValidateMacro(name: Expr[String])(using Quotes): Expr[AttrClass] = {
     import quotes.reflect._

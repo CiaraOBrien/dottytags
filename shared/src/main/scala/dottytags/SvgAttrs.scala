@@ -2,6 +2,8 @@ package dottytags
 
 import AttrClass._
 
+// This whole file is, of course, derived from scalatags.
+
 object SvgAttrs {
 
   /**
