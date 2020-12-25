@@ -20,7 +20,7 @@ import Core._
  * A trait for global attributes that are applicable to any HTML5 element. All traits that define Attrs should
  * derive from this trait since all groupings of attributes should include these global ones.
  */
-object GlobalAttrs {
+object globalAttrs {
 
   /**
    * Specifies a shortcut key to activate/focus an element
@@ -157,7 +157,7 @@ object GlobalAttrs {
   inline def translate	= attr("translate") := "translate"
 }
 
-object SharedEventAttrs {
+object sharedEventAttrs {
   /**
    * Script to be run when an error occurs when the file is being loaded
    */
@@ -167,7 +167,7 @@ object SharedEventAttrs {
 /**
  * Clipboard Events
  */
-object ClipboardEventAttrs {
+object clipboardEventAttrs {
   /**
    * Fires when the user copies the content of an element
    */
@@ -187,7 +187,7 @@ object ClipboardEventAttrs {
  * all HTML elements, but they are most common in media elements, like <audio>,
  * <embed>, <img>, <object>, and <video>.
  */
-object MediaEventAttrs {
+object mediaEventAttrs {
 
   /**
    * Script to be run on abort
@@ -282,7 +282,7 @@ object MediaEventAttrs {
 /**
  * Miscellaneous Events
  */
-object MiscellaneousEventAttrs {
+object miscEventAttrs {
   /**
    * Fires when a <menu> element is shown as a context menu
    */
@@ -297,7 +297,7 @@ object MiscellaneousEventAttrs {
  * Window Events
  *
  */
-object WindowEventAttrs {
+object windowEventAttrs {
   /**
    * The load event fires at the end of the document loading process. At this
    * point, all of the objects in the document are in the DOM, and all the
@@ -364,7 +364,7 @@ object WindowEventAttrs {
  * Form Events that are triggered by actions inside an HTML form. However, these events apply to almost all HTML
  * elements but are most commonly used in form elements.
  */
-object FormEventAttrs {
+object formEventAttrs {
   /**
    * The blur event is raised when an element loses focus.
    *
@@ -431,7 +431,7 @@ object FormEventAttrs {
 /**
  * Keyboard Events - triggered by user action son the keyboard or similar user actions
  */
-object KeyboardEventAttrs {
+object keyboardEventAttrs {
   /**
    * The keydown event is raised when the user presses a keyboard key.
    *
@@ -459,7 +459,7 @@ object KeyboardEventAttrs {
 /**
  * Mouse Events: triggered by a mouse, or similar user actions.
  */
-object MouseEventAttrs {
+object mouseEventAttrs {
   /**
    * The click event is raised when the user clicks on an element. The click
    * event will occur after the mousedown and mouseup events.
@@ -553,7 +553,7 @@ object MouseEventAttrs {
  * from other groupings. The attributes permitted by the input element are
  * likely the most complex of any element in HTML5.
  */
-object InputAttrs {
+object inputAttrs {
 
   /**
    * The URI of a program that processes the information submitted via the form.
@@ -816,16 +816,16 @@ object InputAttrs {
  * mixed in to other objects if needed. This should contain "all" attributes
  * and mix in other traits (defined above) as needed to get full coverage.
  */
-object Attrs {
-  export GlobalAttrs._
-  export InputAttrs._
-  export ClipboardEventAttrs._
-  export MediaEventAttrs._
-  export MiscellaneousEventAttrs._
-  export KeyboardEventAttrs._
-  export MouseEventAttrs._
-  export WindowEventAttrs._
-  export FormEventAttrs._
+object attrs {
+  export globalAttrs._
+  export inputAttrs._
+  export clipboardEventAttrs._
+  export mediaEventAttrs._
+  export miscEventAttrs._
+  export keyboardEventAttrs._
+  export mouseEventAttrs._
+  export windowEventAttrs._
+  export formEventAttrs._
   /**
    * This is the single required attribute for anchors defining a hypertext
    * source link. It indicates the link target, either a URL or a URL fragment.
@@ -1011,7 +1011,7 @@ object Attrs {
    *
    * MDN
    */
-  object aria{
+  object aria {
     /**
      * Identifies the currently active descendant of a composite widget.
      */

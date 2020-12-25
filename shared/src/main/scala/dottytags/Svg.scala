@@ -1,6 +1,9 @@
 package dottytags
 
+import TagClass._
 import AttrClass._
+import StyleClass._
+import scala.annotation.targetName
 
 /*
  * Documentation marked "MDN" is thanks to Mozilla Contributors
@@ -12,10 +15,87 @@ import AttrClass._
  * https://github.com/CiaraOBrien/dottytags/blob/main/LICENSE
  * 
  * This whole file is, of course, adapted from scalatags (see LICENSE for copyright notice):
+ * https://github.com/lihaoyi/scalatags/blob/master/scalatags/src/scalatags/generic/SvgTags.scala
  * https://github.com/lihaoyi/scalatags/blob/master/scalatags/src/scalatags/generic/SvgAttrs.scala
  */
 
-object SvgAttrs {
+object svg {
+
+  inline def altGlyph = tag("altGlyph")
+  inline def altGlyphDef = tag("altGlyphDef")
+  inline def altGlyphItem = tag("altGlyphItem")
+  inline def animate = tag("animate")
+  inline def animateMotion = tag("animateMotion")
+  inline def animateTransform = tag("animateTransform")
+  inline def circle = tag("circle")
+  inline def clipPath = tag("clipPath")
+  inline def `color-profile` = tag("color-profile")
+  //inline def cursorTag = tag("cursor") Deprecated and unsupported in many browsers, use cursor attribute instead
+  inline def defs = tag("defs")
+  inline def desc = tag("desc")
+  inline def ellipse = tag("ellipse")
+  inline def feBlend = tag("feBlend")
+  inline def feColorMatrix = tag("feColorMatrix")
+  inline def feComponentTransfer = tag("feComponentTransfer")
+  inline def feComposite = tag("feComposite")
+  inline def feConvolveMatrix = tag("feConvolveMatrix")
+  inline def feDiffuseLighting = tag("feDiffuseLighting")
+  inline def feDisplacementMap = tag("feDisplacementMap")
+  inline def feDistantLighting = tag("feDistantLighting")
+  inline def feFlood = tag("feFlood")
+  inline def feFuncA = tag("feFuncA")
+  inline def feFuncB = tag("feFuncB")
+  inline def feFuncG = tag("feFuncG")
+  inline def feFuncR = tag("feFuncR")
+  inline def feGaussianBlur = tag("feGaussianBlur")
+  inline def feImage = tag("feImage")
+  inline def feMerge = tag("feMerge")
+  inline def feMergeNode = tag("feMergeNode")
+  inline def feMorphology = tag("feMorphology")
+  inline def feOffset = tag("feOffset")
+  inline def fePointLight = tag("fePointLight")
+  inline def feSpecularLighting = tag("feSpecularLighting")
+  inline def feSpotlight = tag("feSpotlight")
+  inline def feTile = tag("feTile")
+  inline def feTurbulance = tag("feTurbulance")
+  inline def filter = tag("filter")
+  inline def font = tag("font")
+  inline def `font-face` = tag("font-face")
+  inline def `font-face-format` = tag("font-face-format")
+  inline def `font-face-name` = tag("font-face-name")
+  inline def `font-face-src` = tag("font-face-src")
+  inline def `font-face-uri` = tag("font-face-uri")
+  inline def foreignObject = tag("foreignObject")
+  inline def g = tag("g")
+  inline def glyph = tag("glyph")
+  inline def glyphRef = tag("glyphRef")
+  inline def hkern = tag("hkern")
+  inline def image = tag("image")
+  inline def line = tag("line")
+  inline def linearGradient = tag("linearGradient")
+  inline def marker = tag("marker")
+  inline def mask = tag("mask")
+  inline def metadata = tag("metadata")
+  //inline def missingGlyph = tag("missing-glyph") Not supported in literally any browser apparently
+  inline def mpath = tag("mpath")
+  inline def path = tag("path")
+  inline def pattern = tag("pattern")
+  inline def polygon = tag("polygon")
+  inline def polyline = tag("polyline")
+  inline def radialGradient = tag("radialGradient")
+  inline def rect = tag("rect")
+  inline def set = tag("set")
+  inline def stop = tag("stop")
+  inline def svg = tag("svg")
+  inline def switch = tag("switch")
+  inline def symbol = tag("symbol")
+  inline def text = tag("text")
+  inline def textPath = tag("textPath")
+  inline def tref = tag("tref")
+  inline def tspan = tag("tspan")
+  inline def use = tag("use")
+  inline def view = tag("view")
+  inline def vkern = tag("vkern")
 
   /**
    * This attribute defines the distance from the origin to the top of accent characters,
@@ -233,7 +313,7 @@ object SvgAttrs {
    *
    * MDN
    */
-  inline def clipPath = attr("clip-path")
+  inline def clipPathBind = attr("clip-path")
 
   /**
    * The clipPathUnits attribute defines the coordinate system for the contents
@@ -545,11 +625,11 @@ object SvgAttrs {
 
 
   /**
-   *
-   *
+   * The filter attribute specifies the filter effects defined by the `<filter>` element that shall be applied to its element.
+   * 
    * MDN
    */
-  inline def filter = attr("filter")
+  inline def filterBind = attr("filter")
 
 
   /**
@@ -889,9 +969,7 @@ object SvgAttrs {
    *
    * MDN
    */
-  inline def mask = attr("mak")
-
-
+  inline def maskBind = attr("mask")
 
   /**
    *
@@ -1576,4 +1654,5 @@ object SvgAttrs {
    * MDN
    */
   inline def z = attr("z")
+  
 }

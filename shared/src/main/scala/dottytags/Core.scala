@@ -4,12 +4,11 @@ import scala.quoted._
 import scala.annotation.targetName
 import scala.unchecked
 import scala.language.implicitConversions
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 import TagClass._
 import StyleClass._
 import AttrClass._
-
 
 object Core {
 
@@ -215,36 +214,45 @@ object Core {
     * This whole class is almost definitely an obscene performance bottleneck but it's all at compile-time
     * so lol who cares.
     */
-  private class Splice(val parts: Seq[Span]) {
+  private class Splice(seq: Seq[Span]) {
+    private var parts = ListBuffer().appendAll(seq)
     /**
       * Appends the given [[Span]] to this [[Splice]] and returns. If `s` is [[Static]]
       * then it may be concatenated with the previous [[Span]] if it is also [[Static]].
       */
-    def append(s: Span): Splice = Splice(s match
-      case Static(s) => parts.lastOption match 
-        case Some(Static(s1)) => parts.updated(parts.size - 1, Static(s1 + s))
-        case _                => parts.appended(Static(s))
-      case d: Dynamic         => parts.appended(d))
+    def append(s: Span): Splice = { 
+      s match
+        case Static(s) => parts.lastOption match 
+          case Some(Static(s1)) => parts.update(parts.size - 1, Static(s1 + s))
+          case _                => parts.append(Static(s))
+        case d: Dynamic         => parts.append(d)
+      return this
+    }
     /**
       * Prepends the given [[Span]] to this [[Splice]] and returns. If `s` is [[Static]]
       * then it may be concatenated (prepending) with the previous [[Span]] if it is also [[Static]].
       */
-    def prepend(s: Span): Splice = Splice(s match
-      case Static(s) => parts.headOption match 
-        case Some(Static(s1)) => parts.updated(0, Static(s + s1))
-        case _                => parts.prepended(Static(s))
-      case d: Dynamic         => parts.prepended(d)
-    )
+    def prepend(s: Span): Splice = { 
+      s match 
+        case Static(s) => parts.headOption match 
+          case Some(Static(s1)) => parts.update(0, Static(s + s1))
+          case _                => parts.prepend(Static(s))
+        case d: Dynamic         => parts.prepend(d)
+      return this
+    }
     /**
       * Adds the given [[Splice]] to the end of this one by using [[append]] one-by-one.
       */
-    def concat(s: Splice): Splice = s.parts.foldLeft(this)((acc, p) => acc.append(p))
+    def appendAll(s: Splice): Splice = {
+      s.parts.foreach(append)
+      return this
+    }
     /**
       * Decomposes this [[Splice]] into a sequence of expressions yielding strings,
       * [[Static]]s are converted into string literals, [[Dynamic]]s into their underlying
       * dynamic expression so it can be inlined.
       */
-    def exprs(using Quotes): Seq[Expr[String]] = parts.collect {
+    def exprs(using Quotes): Seq[Expr[String]] = parts.toList.collect {
       case Static(str) => Expr(str)
       case Dynamic(expr) => expr
     }
@@ -252,10 +260,13 @@ object Core {
       * If the last [[Span]] in this [[Splice]] is [[Static]], strip any trailing
       * spaces for prettiness.
       */
-    def stripTrailingSpace: Splice = Splice(parts.lastOption match
-      case Some(Static(s)) => parts.updated(parts.size - 1, Static(s.stripSuffix(" ")))
-      case _ => parts
-    )
+    def stripTrailingSpace: Splice = {
+      parts.lastOption match 
+        case Some(Static(s)) => parts.update(parts.size - 1, Static(s.stripSuffix(" ")))
+        case _ =>
+      return this
+    }
+    def isEmpty = parts.isEmpty; def nonEmpty = parts.nonEmpty
   }
   /**
     * Turns an `Expr[String]`, which may contain nested [[_sticky._splice]]s,
@@ -264,7 +275,10 @@ object Core {
     */
   private def unstick_spliced_string(s: Expr[String])(using Quotes): Splice = s match {
     case Expr(s: String) => Splice(Seq(Static(s)))
-    case '{ _sticky._splice(${BetterVarargs(parts)}: _*) } => Splice(parts.flatMap(unstick_spliced_string(_).parts))
+    case '{ _sticky._splice(${BetterVarargs(parts)}: _*) } => 
+      val ret = Splice(Nil)
+      parts.map(unstick_spliced_string).foreach(ret.appendAll)
+      ret
     case '{ _sticky._splice($part) } => unstick_spliced_string(part)
     case dyn: Expr[String] => Splice(Seq(Dynamic(dyn)))
   }
@@ -344,6 +358,7 @@ object Core {
     * <html class="foo" href="bar" style="baz1: qux; baz2: qux;">quux1608810396295a</html>
     * ```
     */
+  inline implicit def tagClass2EmptyTag(inline cl: TagClass): Tag = cl()
   extension (inline cl: TagClass) inline def apply(inline args: Entity*): Tag = ${ tagMacro('cl)('args) }
   private def tagMacro(cl: Expr[TagClass])(args: Expr[Seq[Entity]])(using Quotes): Expr[Tag] = {
     import quotes.reflect._
@@ -351,43 +366,41 @@ object Core {
     val sname       = cls.name
     val selfClosing = cls.selfClosing
 
-    var attrsSplice  = Splice(List(Static(s"<$sname ")))
-    var stylesSplice = Splice(Nil)
-    var bodySplice   = Splice(Nil)
+    val attrs  = Splice(List(Static(s"<$sname ")))
+    val styles = Splice(Nil)
+    val body   = Splice(Nil)
     
     def iter(as: Seq[Expr[Entity]]): Unit = as.foreach{_ match 
       // Static attr/style/tag/raw string:
-      case '{_sticky._attr($s)}  => attrsSplice  = attrsSplice .concat(unstick_spliced_string(s))
-      case '{_sticky._style($s)} => stylesSplice = stylesSplice.concat(unstick_spliced_string(s))
-      case '{_sticky._tag($s)}   => bodySplice   = bodySplice  .concat(unstick_spliced_string(s))
-      case '{_sticky._raw($s)}   => bodySplice   = bodySplice  .concat(unstick_spliced_string(s))
+      case '{_sticky._attr($s)}  => attrs .appendAll(unstick_spliced_string(s))
+      case '{_sticky._style($s)} => styles.appendAll(unstick_spliced_string(s))
+      case '{_sticky._tag($s)}   => body  .appendAll(unstick_spliced_string(s))
+      case '{_sticky._raw($s)}   => body  .appendAll(unstick_spliced_string(s))
       // Static frag, can be decomposed:
       case '{_sticky._frag(${BetterVarargs(s)})} => iter(s)
       // Dynamic attr/style/tag/raw string:
-      case '{$e: Attr}  => attrsSplice  = attrsSplice .append(unstick_unspliced_string('{$e.render}))
-      case '{$e: Style} => stylesSplice = stylesSplice.append(unstick_unspliced_string('{$e.render}))
-      case '{$e: Tag}   => bodySplice   = bodySplice  .append(unstick_unspliced_string('{$e.render}))
-      case '{$e: Raw}   => bodySplice   = bodySplice  .append(unstick_unspliced_string('{$e.render}))
-      // Static frag with a dynamic interior, _frag call can be elided by extracting the Seq:
-      //case '{_sticky._frag(${e: Expr[Seq[Element]]})} => bodySplice.append(unstick_dyn_frag(stick_frag(e)))
+      case '{$e: Attr}  => attrs .append(unstick_unspliced_string('{$e.str}))
+      case '{$e: Style} => styles.append(unstick_unspliced_string('{$e.str}))
+      case '{$e: Tag}   => body  .append(unstick_unspliced_string('{$e.str}))
+      case '{$e: Raw}   => body  .append(unstick_unspliced_string('{$e.str}))
+      // Static frag with a dynamic interior, _frag call can be elided by extracting the Expr[Seq[Element]]
+      case '{_sticky._frag(${e: Expr[Seq[Element]]})} => body.append(Dynamic('{_sticky._splice_escaping($e)}))
       // Dynamic frag, must be completely spliced (and escaped) at runtime:
-      case '{$e: Frag} => bodySplice = bodySplice.append(unstick_dyn_frag(e))
+      case '{$e: Frag} => body.append(Dynamic('{_sticky._splice_escaping($e.s)}))
       // Static or dynamic non-raw string (must be escaped):
-      case '{$e: String} => bodySplice = bodySplice.append(unstick_unspliced_string(e) match 
+      case '{$e: String} => body.append(unstick_unspliced_string(e) match 
         case Static(str) => Static(escape(str))
         case Dynamic(e) => Dynamic('{escape($e)}))
       // Lol idk
       case e => error("Error, unable to expand expression:\n" + e.show)
     }
 
-    BetterVarargs.unapply(args).map { varargs =>
-      iter(varargs)
-      if stylesSplice.parts.nonEmpty then stylesSplice = (stylesSplice.prepend(Static("style=\""))).stripTrailingSpace.append(Static("\""))
-      if attrsSplice.parts.nonEmpty && stylesSplice.parts.isEmpty then attrsSplice = attrsSplice.stripTrailingSpace
-      if bodySplice.parts.isEmpty then bodySplice = bodySplice.append(Static(if selfClosing then "/>" else s"></$sname>"))
-      else bodySplice = bodySplice.append(Static(s"</$sname>"))
-            stylesSplice = stylesSplice.append(Static(">"))
-      stick_tag(stick_splice((Splice(Seq()).concat(attrsSplice).concat(stylesSplice).concat(bodySplice)).exprs: _*))
+    BetterVarargs.unapply(args).map { varargs => iter(varargs)
+      if styles.isEmpty then attrs.stripTrailingSpace
+                        else styles.stripTrailingSpace.prepend(Static("style=\"")).append(Static("\""))
+      if body.isEmpty   then body.prepend(Static(if selfClosing then "/>" else s"></$sname>"))
+                        else body.prepend(Static(">")).append(Static(s"</$sname>"))
+      stick_tag(stick_splice(attrs.appendAll(styles).appendAll(body).exprs: _*))
     }.getOrElse(error("Error, unable to expand varargs:\n" + args.show))
   }
   
@@ -409,6 +422,10 @@ object Core {
   private def fragMacro(elems: Expr[Seq[Element]])(using Quotes): Expr[Frag] = elems match 
     case BetterVarargs(as) => stick_frag(BetterVarargs(as))
     case e: Expr[Seq[Element]] => stick_frag(e)
+    case e => error("Error, unable to expand:\n" + e.show)
+  private def fragMacroVals(elems: Expr[Seq[AnyVal]])(using Quotes): Expr[Frag] = elems match 
+    case BetterVarargs(as) => stick_frag(BetterVarargs(as.map(a => '{$a.toString})))
+    case e: Expr[Seq[AnyVal]] => stick_frag('{$e.map(_.toString)})
     case e => error("Error, unable to expand:\n" + e.show)
   
   /** Just checks `attr` is static, escapes `value`, and then splices together the attribute string.
@@ -443,5 +460,11 @@ object Core {
   inline def concatStrLits(inline str1: String, inline str2: String): String = ${ concatStrLitsMacro('str1, 'str2) }
   private def concatStrLitsMacro(str1: Expr[String], str2: Expr[String])(using Quotes): Expr[String] = 
     Expr(str1.value.getOrElse(error("str1 must be static.")) + str2.value.getOrElse(error("str2 must be static.")))
+  
+  def numericLiteralToString[A](expr: Expr[A])(using Type[A], Quotes): Expr[String] = expr.value match {
+    case Some(a: A) => Expr(a.toString)
+    case _ => '{ $expr.toString }
+  }
+
 
 }

@@ -18,7 +18,7 @@ import Core._
 import scala.annotation.targetName
 import scala.language.adhocExtensions // Just because I extend StyleClass doesn't mean you should!
 
-object Styles {
+object styles {
 
   /**
    * If a background-image is specified, the background-attachment CSS
@@ -3431,7 +3431,7 @@ object Styles {
   * Contains CSS styles which are used less frequently. These are not imported by
   * default to avoid namespace pollution.
   */
-object MiscStyles {
+object miscStyles {
 
   /**
    * The animation-direction CSS property indicates whether the animation should

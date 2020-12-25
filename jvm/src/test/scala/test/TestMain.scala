@@ -2,12 +2,14 @@ package test
 
 //import scalatags.Text.all._
 import dottytags.Core._
+import dottytags.Implicits.given
 import dottytags.TagClass._
 import dottytags.StyleClass._
 import dottytags.AttrClass._
-import dottytags.Tags._
-import dottytags.Attrs._
-import dottytags.Styles._
+import dottytags.tags._
+import dottytags.svg._
+import dottytags.attrs._
+import dottytags.styles._
 
 object Main {
 
@@ -21,11 +23,11 @@ object Main {
 
     //tagSelfClosing("bruh")(Seq(attr("class") := "bruh", css("color") := "red"), cssPx("height") := "100")
 
-    println(html(cls := "foo", href := "bar", css("baz1") := "qux", "quux", 
-      borderSpacing := ("horiz", "vert"), css("baz2") := "qux", raw("a")
+    println(html(cls := "foo", href := "bar", clipPathBind := "qux", "quux", 
+      borderSpacing := ("horiz", "vert"), css("baz2") := "qux", clipPath("a")
     ).render)
 
-    /*val numVisitors: Int = 1023
+    val numVisitors: Int = 1023
     val posts: Seq[(String, String)] = Seq(
       ("alice", "i like pie"),
       ("bob", "pie is evil i hate you"),
@@ -41,18 +43,18 @@ object Main {
       body(
         h1("This is my <<<< title", cssPx("weight") := System.currentTimeMillis.toString),
         div("posts"),
-        bind(for ((name, text) <- posts) yield div(
+        for ((name, text) <- posts) yield div(
             h2("Post by ", name),
             p(text)
-          )),
+          ),
         frag(raw("<"), ">"),
         cls := "test",
         if numVisitors > 100 then p("No more posts!")
         else p("Please post below...")
-    )).render*/
+    )).render
 
     val quux = "quux"
-    def calc() = html(cls := "foo", href := "bar", backgroundAttachment.fixed, quux, css("baz2") := "qux", raw("a")).render
+    //def calc() = html(cls := "foo", href := "bar", backgroundAttachment.fixed, quux, css("baz2") := "qux", raw("a")).render
 
     println(calc())
 
