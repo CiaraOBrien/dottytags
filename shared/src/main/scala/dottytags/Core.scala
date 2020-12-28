@@ -186,125 +186,6 @@ private[dottytags] def error(error: String)(using Quotes): Nothing = {
   throw scala.quoted.runtime.StopMacroExpansion()
 }
 
-/**
-  * Something that can be [[Splice]]d. Intended for use at compile-time.
-  * @see [[Static]]
-  * @see [[Dynamic]]
-  */
-private trait Span
-/**
-  * Something that can be [[Splice]]d with adjacent `Static`s at compile-time since it is statically-known.
-  * Intended for use at compile-time.
-  */
-private case class Static(str: String) extends Span
-/**
-  * Something that can only be [[Splice]]d at runtime.
-  *  Intended for use at compile-time.
-  */
-private case class Dynamic(expr: Expr[String]) extends Span
-/**
-  * Splices together [[Span]]s as much as possible at compile-time, then is
-  * decomposed into a [[scala.collections.Seq]] of [[scala.quoted.Expr]]s and inlined at the render site.
-  * This whole class is almost definitely an obscene performance bottleneck but it's all at compile-time
-  * so lol who cares.
-  */
-private class Splice(seq: Seq[Span]) {
-  private var parts = ListBuffer().appendAll(seq)
-  /**
-    * Appends the given [[Span]] to this [[Splice]] and returns. If `s` is [[Static]]
-    * then it may be concatenated with the previous [[Span]] if it is also [[Static]].
-    */
-  def append(s: Span): Splice = { 
-    s match
-      case Static(s) => parts.lastOption match 
-        case Some(Static(s1)) => parts.update(parts.size - 1, Static(s1 + s))
-        case _                => parts.append(Static(s))
-      case d: Dynamic         => parts.append(d)
-    return this
-  }
-  /**
-    * Prepends the given [[Span]] to this [[Splice]] and returns. If `s` is [[Static]]
-    * then it may be concatenated (prepending) with the previous [[Span]] if it is also [[Static]].
-    */
-  def prepend(s: Span): Splice = { 
-    s match 
-      case Static(s) => parts.headOption match 
-        case Some(Static(s1)) => parts.update(0, Static(s + s1))
-        case _                => parts.prepend(Static(s))
-      case d: Dynamic         => parts.prepend(d)
-    return this
-  }
-  /**
-    * Adds the given [[Splice]] to the end of this one by using [[append]] one-by-one.
-    */
-  def appendAll(s: Splice): Splice = {
-    s.parts.foreach(append)
-    return this
-  }
-  /**
-    * Decomposes this [[Splice]] into a sequence of expressions yielding strings,
-    * [[Static]]s are converted into string literals, [[Dynamic]]s into their underlying
-    * dynamic expression so it can be inlined.
-    */
-  def exprs(using Quotes): Seq[Expr[String]] = parts.toList.collect {
-    case Static(str) => Expr(str)
-    case Dynamic(expr) => expr
-  }
-  /**
-    * If the last [[Span]] in this [[Splice]] is [[Static]], strip any trailing
-    * spaces for prettiness.
-    */
-  def stripTrailingSpace: Splice = {
-    parts.lastOption match 
-      case Some(Static(s)) => parts.update(parts.size - 1, Static(s.stripSuffix(" ")))
-      case _ =>
-    return this
-  }
-  def isEmpty = parts.isEmpty; def nonEmpty = parts.nonEmpty
-}
-/**
-  * Turns an `Expr[String]`, which may contain nested [[_sticky._splice]]s,
-  * into a [[Span]].
-  * @see [[unstick_unspliced_string]]
-  */
-private def unstick_spliced_string(s: Expr[String])(using Quotes): Splice = s match {
-  case Expr(s: String) => Splice(Seq(Static(s)))
-  case '{ _sticky._splice(${BetterVarargs(parts)}: _*) } => 
-    val ret = Splice(Nil)
-    parts.map(unstick_spliced_string).foreach(ret.appendAll)
-    ret
-  case '{ _sticky._splice($part) } => unstick_spliced_string(part)
-  case dyn: Expr[String] => Splice(Seq(Dynamic(dyn)))
-}
-/**
-  * Turns an `Expr[String]` into a [[Span]], deferring [[_sticky._splice]]s
-  * until runtime. As such, it should primarily be used in cases where it is known
-  * that there won't be any nested [[_sticky._splice]]s.
-  * @see [[unstick_spliced_string]]
-  */
-private def unstick_unspliced_string(s: Expr[String])(using Quotes): Span = s match 
-  case Expr(s: String) => Static(s)
-  case dyn: Expr[String] => Dynamic(dyn)
-/**
-  * Turns a dynamic `Expr[Frag]` into a [[Span]], specifically a [[Dynamic]],
-  * which renders the [[Frag]] entirely at runtime, including escaping non-raw strings.
-  */
-//private def unstick_dyn_frag(s: Expr[Frag])(using Quotes): Span = Dynamic('{_sticky._splice_escaping($s.s)})
-private def unstick_dyn_frag(s: Expr[Frag])(using Quotes): Span = Dynamic('{
-  val sb = new StringBuilder()
-  var i = 0
-  val seq = $s.s
-  val len = seq.size
-  while i < len do {
-    sb.append(seq(i) match
-      case s: String => dottytags.escape(s)
-      case e         => _sticky._renderOutOfLine(e)
-    )
-    i = i + 1
-  }
-  sb.toString
-})
-
 /** 
   * Shortcut for [[_sticky._splice]] invocations in macros.
   * If `parts` only contains one `Expr[String]`, passes it through without splicing.
@@ -366,23 +247,23 @@ private def tagMacro(cl: Expr[TagClass])(args: Expr[Seq[Entity]])(using Quotes):
   
   def iter(as: Seq[Expr[Entity]]): Unit = as.foreach{_ match 
     // Static attr/style/tag/raw string:
-    case '{_sticky._attr($s)}  => attrs .appendAll(unstick_spliced_string(s))
-    case '{_sticky._style($s)} => styles.appendAll(unstick_spliced_string(s))
-    case '{_sticky._tag($s)}   => body  .appendAll(unstick_spliced_string(s))
-    case '{_sticky._raw($s)}   => body  .appendAll(unstick_spliced_string(s))
+    case '{_sticky._attr($s)}  => attrs .appendAll(Splice.lift(s))
+    case '{_sticky._style($s)} => styles.appendAll(Splice.lift(s))
+    case '{_sticky._tag($s)}   => body  .appendAll(Splice.lift(s))
+    case '{_sticky._raw($s)}   => body  .appendAll(Splice.lift(s))
     // Static frag, can be decomposed:
     case '{_sticky._frag(${BetterVarargs(s)})} => iter(s)
     // Dynamic attr/style/tag/raw string:
-    case '{$e: Attr}  => attrs .append(unstick_unspliced_string('{$e.str}))
-    case '{$e: Style} => styles.append(unstick_unspliced_string('{$e.str}))
-    case '{$e: Tag}   => body  .append(unstick_unspliced_string('{$e.str}))
-    case '{$e: Raw}   => body  .append(unstick_unspliced_string('{$e.str}))
+    case '{$e: Attr}  => attrs .append(Span.lift('{$e.str}))
+    case '{$e: Style} => styles.append(Span.lift('{$e.str}))
+    case '{$e: Tag}   => body  .append(Span.lift('{$e.str}))
+    case '{$e: Raw}   => body  .append(Span.lift('{$e.str}))
     // Static frag with a dynamic interior, _frag call can be elided by extracting the Expr[Seq[Element]]
     case '{_sticky._frag(${e: Expr[Seq[Element]]})} => body.append(Dynamic('{_sticky._splice_escaping($e)}))
     // Dynamic frag, must be completely spliced (and escaped) at runtime:
     case '{$e: Frag} => body.append(Dynamic('{_sticky._splice_escaping($e.s)}))
     // Static or dynamic non-raw string (must be escaped):
-    case '{$e: String} => body.append(unstick_unspliced_string(e) match 
+    case '{$e: String} => body.append(Span.lift(e) match 
       case Static(str) => Static(escape(str))
       case Dynamic(e) => Dynamic('{escape($e)}))
     // Lol idk
@@ -398,7 +279,7 @@ private def tagMacro(cl: Expr[TagClass])(args: Expr[Seq[Entity]])(using Quotes):
   }.getOrElse(error("Error, unable to expand varargs:\n" + args.show))
 }
 
-/** The simplest macro, just tags `raw` with [[stick_raw]]*/
+/** The simplest macro, just tags `raw` with [[stick_raw]] */
 inline def raw(inline raw: String): Raw = ${ rawMacro('raw) }
 private def rawMacro(raw: Expr[String])(using Quotes): Expr[Raw] = stick_raw(raw)
 
