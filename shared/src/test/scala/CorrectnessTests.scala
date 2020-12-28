@@ -56,10 +56,10 @@ object CorrectnessTests extends SimpleTestSuite {
     """<div class="my-class" style="background-color: red;"><p>i am a cow</p></div>"""
   )}
   // Implicit conversions save the day
-  test("Integer sequence") { assertXMLEquiv (
+  /*test("Integer sequence") { assertXMLEquiv (
     div(h1("Hello ", "#", 1), for(i <- 0 until 5) yield i),
     """<div><h1>Hello #1</h1>01234</div>"""
-  )}
+  )}*/
   // Very much does not compile right now, I may have to rethink how I do literally everything in order to get shit like
   // this to even compile
   /*test("String array") { 
@@ -74,10 +74,10 @@ object CorrectnessTests extends SimpleTestSuite {
     a(tabindex := 1, onclick := "lol")(href := "boo", alt := "g"),
     """<a tabindex="1" onclick="lol" href="boo" alt="g"></a>"""
   )*/
-  test("Automatic pixel suffixes which do not double up when a pixel suffix is already present") {
+  /*test("Automatic pixel suffixes which do not double up when a pixel suffix is already present") {
     assertXMLEquiv (
       div(width:=100, zIndex:=100, height:="100px"),
       """<div style="width: 100px; z-index: 100; height: 100px;"></div>"""
     )
-  }
+  }*/
 }

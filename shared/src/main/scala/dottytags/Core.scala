@@ -461,10 +461,6 @@ object Core {
   private def concatStrLitsMacro(str1: Expr[String], str2: Expr[String])(using Quotes): Expr[String] = 
     Expr(str1.value.getOrElse(error("str1 must be static.")) + str2.value.getOrElse(error("str2 must be static.")))
   
-  def numericLiteralToString[A](expr: Expr[A])(using Type[A], Quotes): Expr[String] = expr.value match {
-    case Some(a: A) => Expr(a.toString)
-    case _ => '{ $expr.toString }
-  }
 
 
 }

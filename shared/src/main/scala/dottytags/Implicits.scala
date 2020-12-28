@@ -17,8 +17,5 @@ object Implicits {
       at runtime! This Conversion value is invalid at runtime, it must be applied
       and inlined by the compiler only, you shouldn't summon it, sorry""")
   }
-  given inlineIntToString: InlineConversion[Int, String] with {
-    override inline def apply(expr: Int): String = ${ intLiteralToString('expr) }
-  }
 
 }
