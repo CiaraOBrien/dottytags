@@ -1,11 +1,9 @@
 package dottytags
 
-import Core._
-
 import scala.language.implicitConversions
 import scala.quoted._
 
-object Implicits {
+object implicits {
 
   given elemToElem: Conversion[Element, Element] = (e: Element) => e
   //given implicitFrag: Conversion[Seq[Element], Frag] = frag(_)

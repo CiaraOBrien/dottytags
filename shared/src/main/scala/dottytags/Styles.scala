@@ -13,8 +13,6 @@
 
 package dottytags
 
-import StyleClass._
-import Core._
 import scala.annotation.targetName
 import scala.language.adhocExtensions // Just because I extend StyleClass doesn't mean you should!
 
@@ -2043,7 +2041,7 @@ object styles {
     inline def none = this := "none"
 
     inline def ~(pairs: (String, String)*) = {
-      this := pairs.flatMap(x => Seq(x._1, x._2)).map('"' + _ + '"').mkString(" ")
+      this := pairs.flatMap(x => Seq(x._1, x._2)).map("\"" + _ + "\"").mkString(" ")
     }
 
   }

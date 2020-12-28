@@ -10,8 +10,8 @@ import java.io.StringWriter
 private val tagNameRegex   = "^[a-z][:\\w0-9-]*$".r
 private val attrNameRegex  = "^[a-zA-Z_:][-a-zA-Z0-9_:.]*$".r
 private val styleNameRegex = "^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$".r
-private[dottytags] def isValidTagName(name: String): Boolean = tagNameRegex.matches(name)
-private[dottytags] def isValidAttrName(name: String): Boolean = attrNameRegex.matches(name)
+private[dottytags] def isValidTagName(name: String):   Boolean = tagNameRegex.matches(name)
+private[dottytags] def isValidAttrName(name: String):  Boolean = attrNameRegex.matches(name)
 private[dottytags] def isValidStyleName(name: String): Boolean = styleNameRegex.matches(name)
 private[dottytags] def camelCase(dashedString: String) = {
   val list = dashedString.split("-").nn.toList.map(_.nn)

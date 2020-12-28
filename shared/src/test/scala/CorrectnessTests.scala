@@ -1,9 +1,6 @@
 import minitest._
-import dottytags.Core._
-import dottytags.Implicits.given
-import dottytags.TagClass._
-import dottytags.StyleClass._
-import dottytags.AttrClass._
+import dottytags._
+import dottytags.implicits.given
 import dottytags.tags._
 //import dottytags.svg._
 import dottytags.attrs._

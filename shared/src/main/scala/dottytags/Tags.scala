@@ -1,6 +1,5 @@
 package dottytags
 
-import TagClass._
 
 /*
  * This whole file is, of course, adapted from scalatags (see LICENSE for copyright notice):

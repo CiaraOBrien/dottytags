@@ -1,8 +1,5 @@
 package dottytags
 
-import TagClass._
-import AttrClass._
-import StyleClass._
 import scala.annotation.targetName
 
 /*
