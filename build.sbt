@@ -1,10 +1,12 @@
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
 lazy val commonSettings = Seq (
 	name := "dottytags",
 	version := "0.2.0",
 	scalaVersion := "3.0.0-M3",
 	scalacOptions ++= Seq(
 		"-source:3.1", "-indent", "-new-syntax",
-		"-Yexplicit-nulls", "-Ycheck-init", "-language:strictEquality", 
+		"-Yexplicit-nulls", "-Ycheck-init", "-language:strictEquality", "-Yindent-colons", 
 	),
 )
 
@@ -24,6 +26,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 	.crossType(CrossType.Full)
 	.in(file("."))
 	.settings(commonSettings,
+		libraryDependencies += "org.typelevel" %%% "cats-core" % "2.3.1",
 		libraryDependencies += "io.monix" %%% "minitest" % "2.8.2-5ebd81f-SNAPSHOT" % "test",
 		testFrameworks += new TestFramework("minitest.runner.Framework")
 	)

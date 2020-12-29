@@ -10,4 +10,6 @@ import dottytags.styles._
 
 object Playground:
   def main(args: Array[String]): Unit =
-    
+    Phased.phasedTest("test")
+    val test = "test"
+    Phased.phasedTest(test)
