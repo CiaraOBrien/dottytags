@@ -8,14 +8,14 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 import utils._
 
-// """ADT""" Classes
+// === Basic Datatypes === //
 
 /**
   * The true nature of an attribute value. If you can see this as the type of an object at runtime, you're probably
   * not using dottytags right, this is sort of like the singularity of a black hole, it's not supposed to be naked. 
   */
 final class Attr  private[dottytags] (val str: String) { 
-  override def toString = str 
+  override def toString = str
 }
 private[dottytags] object Attr {
   /**
@@ -98,7 +98,9 @@ private[dottytags] object Frag {
   def apply (s: Seq[Element]): Frag = new Frag(s)
 }
 
-// """ADT""" Trait-like things
+
+
+// === ADT Groupings, including String === //
 
 /** 
   * An [[Entity]] that is not allowed to be part of a [[Frag]].
@@ -125,7 +127,9 @@ type Element = Raw | Tag | Frag | String
   */
 type Entity = Modifier | Element
 
-// Splicing and rendering
+
+
+// === Splicing and Rendering === //
 
 /**
   * At compile-time, acts as a flag that its arguments must be spliced, and is removed if
@@ -215,7 +219,9 @@ private[dottytags] def error(error: String)(using Quotes): Nothing = {
   throw scala.quoted.runtime.StopMacroExpansion()
 }
 
-// Tree construction macros
+
+
+// === Tag Tree Construction === //
 
 /** 
   * This is pretty much where all the magic happens, everything that can be statically determined gets
@@ -291,12 +297,62 @@ private def tagMacro(cl: Expr[TagClass])(args: Expr[Seq[Entity]])(using Quotes):
   }.getOrElse(error("Error, unable to traverse varargs:\n" + args.show))
 }
 
+/**
+  * Represents a valid name for a [[Tag]] 
+  * (that is, a string literal containing a valid XML tag name).
+  * Make your own with [[tag]] or check out [[predefs.tags]] for predefined ones.
+  * Additionally, this can carry a boolean payload indicating that this tag is an HTML
+  * self-closing tag, like `<br/>`. You can make your own self-closing tags with the overload of [[tag]]
+  * that takes an extra boolean argument.
+  */
+class TagClass (val name: String, val selfClosing: Boolean)
+
+/**
+  * Creates a static [[TagClass!]], suitable for consumption by [[dottytags.Core.apply]].
+  * Macro expansion will fail if `name` is not a string literal or other static string value,
+  * or if `name` is not a valid XML tag name. The resulting [[TagClass!]] is not self-closing,
+  * see the other overload for that.
+  */
+inline def tag(inline name: String): TagClass = ${ tagValidateMacro('name) }
+private def tagValidateMacro(name: Expr[String])(using Quotes): Expr[TagClass] = {
+  import quotes.reflect._
+  val sname = name.value.getOrElse(error("Tag name must be a string literal."))
+  if !isValidTagName(sname) then error(s"Not a valid XML tag name: $name.")
+  '{new TagClass(${Expr(sname)}, ${Expr(false)})}
+}
+/**
+  * Creates a static [[TagClass!]], suitable for consumption by [[dottytags.Core.apply]].
+  * Macro expansion will fail if `name` is not a string literal or other static string value,
+  * if `name` is not a valid XML tag name, or if `sc` is not a boolean literal or other static
+  * boolean value. The resulting [[TagClass!]] is self-closing if `sc == true`.
+  */
+inline def tag(inline name: String, inline sc: Boolean): TagClass = ${ tagValidateMacroSC('name, 'sc) }
+private def tagValidateMacroSC(name: Expr[String], sc: Expr[Boolean])(using Quotes): Expr[TagClass] = {
+  import quotes.reflect._
+  val sname = name.value.getOrElse(error("Tag name must be a string literal."))
+  if !isValidTagName(sname) then error(s"Not a valid XML tag name: $name.")
+  val scs  = sc.value.getOrElse(error("Self-closing flag must be a literal."))
+  '{new TagClass(${Expr(sname)}, ${Expr(scs)})}
+}
+
+given TagClassFromExpr: FromExpr[TagClass] with {
+  def unapply(x: Expr[TagClass])(using Quotes): Option[TagClass] = x match
+    case '{ new TagClass(${Expr(name: String)}, ${Expr(b)}: Boolean) } => Some(new TagClass(name, b))
+}
 /** To allow for tags to be specified with just a name and no body to make them empty. */
 inline implicit def tagClass2EmptyTag(inline cl: TagClass): Tag = cl()
+
+
+
+// === Raw Text Input === //
 
 /** The simplest macro, just tags `raw` with [[Raw]] */
 inline def raw(inline raw: String): Raw = ${ rawMacro('raw) }
 private def rawMacro(raw: Expr[String])(using Quotes): Expr[Raw] = '{Raw($raw)}
+
+
+
+// === Arbitrary Inputs (Fragments) === //
 
 /** 
   * Binds up the given elements, escaping any non-[[Raw]] strings pre-emptively.
@@ -318,6 +374,38 @@ private def fragMacroVals(elems: Expr[Seq[AnyVal]])(using Quotes): Expr[Frag] = 
   case e: Expr[Seq[AnyVal]] => '{Frag($e.map(_.toString))}
   case e => error("Error, unable to traverse or expand:\n" + e.show)
 
+
+
+// === HTML/HTML/SVG Attributes === //
+
+/**
+  * Represents a valid name for an [[Attr]] 
+  * (that is, a string literal containing a valid XML attribute name).
+  * Make your own with [[attr]] or check out [[dottytags.Attrs]] for predefined ones.
+  * Unlike [[dottytags.StyleClass$.StyleClass!]] and [[dottytags.TagClass$.TagClass!]],
+  * this does not carry any extra configuration payload.
+  */ 
+final class AttrClass (val name: String) {
+  
+}
+
+/**
+  * Creates a static [[AttrClass!]], suitable for consumption by [[dottytags.Core.:=]].
+  * Macro expansion will fail if `name` is not a string literal or other static string value,
+  * or if `name` is not a valid XML attribute name.
+  */ 
+inline def attr(inline name: String): AttrClass = ${ attrValidateMacro('name) }
+private def attrValidateMacro(name: Expr[String])(using Quotes): Expr[AttrClass] = {
+  import quotes.reflect._
+  val sname = name.value.getOrElse(error("Attr name must be a string literal."))
+  if !isValidAttrName(sname) then error(s"Not a valid XML attribute name: $name.")
+  '{new AttrClass(${Expr(sname)})}
+}
+given AttrClassFromExpr: FromExpr[AttrClass] with {
+  def unapply(x: Expr[AttrClass])(using Quotes): Option[AttrClass] = x match
+    case '{ new AttrClass(${Expr(name: String)})} => Some(new AttrClass(name))
+}
+
 /** 
   * Just checks `attr` is static, escapes `value`, and then splices together the attribute string.
   * If we move to a less cursed system using actual case classes or whatever then this can become a member method of [[AttrClass!]].
@@ -327,6 +415,45 @@ private def attrMacro(attr: Expr[AttrClass], setTo: Expr[String])(using Quotes):
   case Some(setTo: String) => '{Attr(${        Expr(cls.name + "=\""   + escape(setTo)       + "\" ")})}
   case _                   => '{Attr(${spliced(Expr(cls.name + "=\""), '{escape($setTo)}, Expr("\" "))})}
 }.getOrElse(error("Attribute class must be static."))
+
+
+
+// === CSS Styles === //
+
+/**
+  * Represents a valid name for a [[dottytags.Core.Style]] 
+  * (that is, a string literal containing a valid CSS style name).
+  * Make your own with [[css]] or [[cssPx]] or check out [[dottytags.Styles]] for predefined ones.
+  * Additionally, this can carry a boolean payload indicating that this style takes an argument
+  * with a 'px' suffix, which will be automatically added if not present in your argument.
+  * [[css]] makes non-px [[StyleClass!]]es, [[cssPx]] makes px ones.
+  */
+class StyleClass (val name: String, val px: Boolean) {
+  
+}
+
+/**
+  * Creates a static [[StyleClass!]], suitable for consumption by [[dottytags.Core.:=]].
+  * Macro expansion will fail if `name` is not a string literal or other static string value,
+  * or if `name` is not a valid CSS style name. The resulting [[StyleClass!]] is not px-suffixed,
+  * see [[cssPx]] for that.
+  */
+inline def css(inline name: String): StyleClass = ${ cssValidateMacro('name, '{false}) }
+/**
+  * Creates a static [[StyleClass!]], suitable for consumption by [[dottytags.Core.:=]].
+  * Macro expansion will fail if `name` is not a string literal or other static string value,
+  * or if `name` is not a valid CSS style name. The resulting [[TagClass!]] is px-suffixed,
+  * see [[css]] for a non-suffixed class.
+  */
+inline def cssPx(inline name: String): StyleClass = ${ cssValidateMacro('name, '{true}) }
+private def cssValidateMacro(name: Expr[String], px: Expr[Boolean])(using Quotes): Expr[StyleClass] = {
+  import quotes.reflect._
+  val sname = name.value.getOrElse(error("Style name must be a string literal."))
+  val spx   = px.value.getOrElse(error("Pixel style must be a boolean literal."))
+
+  if !isValidStyleName(sname) then error(s"Not a valid CSS style name: $name.")
+  '{new StyleClass(${Expr(sname)}, ${Expr(spx)})}
+}
 
 /**
   * Just checks `style` is static, escapes `value` (dynamic or static), 
@@ -344,7 +471,14 @@ private def pxifyStatic (s: String, px: Boolean): String  = if px && !s.endsWith
 /** Pxifies a dynamic string: if, at runtime, its computed value doesn't already end with 'px', add it. */
 private def pxifyDynamic(s: Expr[String], px: Boolean)(using Quotes): Expr[String] = if px then '{ pxifyOutOfLine($s) } else s
 
-// Random testing methods
+given StyleClassFromExpr: FromExpr[StyleClass] with {
+  def unapply(x: Expr[StyleClass])(using Quotes): Option[StyleClass] = x match
+    case '{ new StyleClass(${Expr(name: String)}, ${Expr(spx: Boolean)})} => Some(new StyleClass(name, spx))
+}
+
+
+
+// === Random Test Functions === //
 
 inline def showCode(inline a: Any): Unit = ${ showCodeMacro('a) }
 private def showCodeMacro(a: Expr[Any])(using Quotes): Expr[Unit] = {
