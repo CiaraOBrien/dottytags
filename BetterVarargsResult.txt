@@ -1,0 +1,186 @@
+With BetterVarargs:
+
+[info]         val numVisitors: Int = 1023
+[info]         val posts: Seq[Tuple2[String, String]] =
+[info]           Seq.apply[(String, String)](
+[info]             [Tuple2.apply[String, String]("alice", "i like pie"),
+[info]               Tuple2.apply[String, String]("bob", "pie is evil i hate you")
+[info]             ,
+[info]               Tuple2.apply[String, String]("charlie",
+[info]                 "i like pie and pie is evil, i hat myself"
+[info]               )
+[info]              : (String, String)]:(String, String)*
+[info]           )
+[info]         val bold: String = System.currentTimeMillis().toString()
+[info]         def calc(): String =
+[info]           {
+[info]             val $scrutinee1: dottytags.Tag =
+[info]               dottytags._sticky._tag(
+[info]                 dottytags._sticky._splice(
+[info]                   [
+[info]
+[info]                       "<html><head><script>some script</script></head><body class=\"test\"><h1 style=\"weight: "
+[info]
+[info]                   ,
+[info]                     dottytags._sticky._pxifyOutOfLine(
+[info]                       dottytags.escape(System.currentTimeMillis().toString())
+[info]                     )
+[info]                   ,";\">This is my &lt;&lt;&lt;&lt; title</h1><div>posts</div>",
+[info]                     dottytags._sticky._splice_escaping(
+[info]                       dottytags.implicits.seqToFrag[
+[info]                         dottytags._sticky.Raw | dottytags._sticky.Tag |
+[info]                           dottytags._sticky.Frag
+[info]                          | String
+[info]                       ](dottytags.implicits.elemToElem).apply(
+[info]                         posts.map[dottytags._sticky.Tag](
+[info]                           {
+[info]                             def $anonfun(x$1: (String, String)):
+[info]                               dottytags._sticky.Tag
+[info]                              =
+[info]                               x$1:(String, String) @unchecked match
+[info]                                 {
+[info]                                   case
+[info]                                     Tuple2.unapply[String, String](name @ _,
+[info]                                       text @ _
+[info]                                     )
+[info]                                    =>
+[info]                                     dottytags._sticky._tag(
+[info]                                       dottytags._sticky._splice(
+[info]                                         ["<div><h2>Post by ",
+[info]                                           dottytags.escape(name)
+[info]                                         ,"</h2><p>",dottytags.escape(text),
+[info]                                           "</p></div>"
+[info]                                          : String]:String*
+[info]                                       )
+[info]                                     ):dottytags.Tag
+[info]                                 }
+[info]                             closure($anonfun)
+[info]                           }
+[info]                         )
+[info]                       ).s
+[info]                     )
+[info]                   ,"<&gt;",
+[info]                     (if numVisitors.>(100) then
+[info]                       dottytags._sticky._tag("<p>No more posts!</p>"):
+[info]                         dottytags.Tag
+[info]                      else
+[info]                       dottytags._sticky._tag("<p>Please post below...</p>"):
+[info]                         dottytags.Tag
+[info]                     ).str
+[info]                   ,"</body></html>" : String]:String*
+[info]                 )
+[info]               ):dottytags.Tag
+[info]             val t: dottytags.Tag = $scrutinee1
+[info]             t.str:String
+[info]           }:String
+[info]         ()
+[info]       }
+[info]   }
+[info] }
+
+Without BetterVarargs:
+
+[info]         val posts: Seq[Tuple2[String, String]] =
+[info]           Seq.apply[(String, String)](
+[info]             [Tuple2.apply[String, String]("alice", "i like pie"),
+[info]               Tuple2.apply[String, String]("bob", "pie is evil i hate you")
+[info]             ,
+[info]               Tuple2.apply[String, String]("charlie",
+[info]                 "i like pie and pie is evil, i hat myself"
+[info]               )
+[info]              : (String, String)]:(String, String)*
+[info]           )
+[info]         val bold: String = System.currentTimeMillis().toString()
+[info]         def calc(): String =
+[info]           {
+[info]             val $scrutinee1: dottytags.Tag =
+[info]               dottytags._sticky._tag(
+[info]                 dottytags._sticky._splice(
+[info]                   ["<html><head><script>some script</script></head>",
+[info]                     dottytags._sticky._splice(
+[info]                       ["<body class=\"test\">",
+[info]                         dottytags._sticky._splice(
+[info]                           ["<h1 style=\"",
+[info]                             dottytags._sticky._splice(
+[info]                               ["weight: ",
+[info]                                 dottytags._sticky._pxifyOutOfLine(
+[info]                                   dottytags.escape(
+[info]                                     System.currentTimeMillis().toString()
+[info]                                   )
+[info]                                 )
+[info]                               ,"; " : String]:String*
+[info]                             )
+[info]                           ,"\">This is my &lt;&lt;&lt;&lt; title</h1>" : String]
+[info]                             :
+[info]                           String*
+[info]                         )
+[info]                       ,"<div>posts</div>",
+[info]                         dottytags._sticky._splice_escaping(
+[info]                           dottytags.implicits.seqToFrag[
+[info]                             dottytags._sticky.Raw | dottytags._sticky.Tag |
+[info]                               dottytags._sticky.Frag
+[info]                              | String
+[info]                           ](dottytags.implicits.elemToElem).apply(
+[info]                             posts.map[dottytags._sticky.Tag](
+[info]                               {
+[info]                                 def $anonfun(x$1: (String, String)):
+[info]                                   dottytags._sticky.Tag
+[info]                                  =
+[info]                                   x$1:(String, String) @unchecked match
+[info]                                     {
+[info]                                       case
+[info]                                         Tuple2.unapply[String, String](name @ _
+[info]                                           ,
+[info]                                         text @ _)
+[info]                                        =>
+[info]                                         dottytags._sticky._tag(
+[info]                                           dottytags._sticky._splice(
+[info]                                             ["<div>",
+[info]                                               dottytags._sticky._splice(
+[info]                                                 ["<h2>Post by ",
+[info]                                                   dottytags.escape(name)
+[info]                                                 ,"</h2>" : String]:String*
+[info]                                               )
+[info]                                             ,
+[info]                                               dottytags._sticky._splice(
+[info]                                                 ["<p>",dottytags.escape(text),
+[info]                                                   "</p>"
+[info]                                                  : String]:String*
+[info]                                               )
+[info]                                             ,"</div>" : String]:String*
+[info]                                           )
+[info]                                         ):dottytags.Tag
+[info]                                     }
+[info]                                 closure($anonfun)
+[info]                               }
+[info]                             )
+[info]                           ).s
+[info]                         )
+[info]                       ,
+[info]                         dottytags._sticky._splice_escaping(
+[info]                           [dottytags._sticky._raw("<"):dottytags.Raw,">" :
+[info]                             dottytags._sticky.Raw | dottytags._sticky.Tag |
+[info]                               dottytags._sticky.Frag
+[info]                              | String
+[info]                           ]
+[info]                         )
+[info]                       ,
+[info]                         (if numVisitors.>(100) then
+[info]                           dottytags._sticky._tag("<p>No more posts!</p>"):
+[info]                             dottytags.Tag
+[info]                          else
+[info]                           dottytags._sticky._tag("<p>Please post below...</p>"):
+[info]                             dottytags.Tag
+[info]                         ).str
+[info]                       ,"</body>" : String]:String*
+[info]                     )
+[info]                   ,"</html>" : String]:String*
+[info]                 )
+[info]               ):dottytags.Tag
+[info]             val t: dottytags.Tag = $scrutinee1
+[info]             t.str:String
+[info]           }:String
+[info]         ()
+[info]       }
+[info]   }
+[info] }
