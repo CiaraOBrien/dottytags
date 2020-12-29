@@ -46,10 +46,10 @@ private[dottytags] class LiftedSplice(seq: Seq[Span]) {
     */
   def append(s: Span): LiftedSplice = { 
     s match
-      case LiftedStatic(s)  => parts.lastOption match 
+      case LiftedStatic(s)          => parts.lastOption match 
         case Some(LiftedStatic(s1)) => parts.update(parts.size - 1, LiftedStatic(s1 + s))
         case _                      => parts.append(LiftedStatic(s))
-      case d: LiftedDynamic => parts.append(d)
+      case d: LiftedDynamic         => parts.append(d)
     return this
   }
   /**
@@ -58,9 +58,9 @@ private[dottytags] class LiftedSplice(seq: Seq[Span]) {
     */
   def prepend(s: Span): LiftedSplice = { 
     s match 
-      case LiftedStatic(s) => parts.headOption match 
+      case LiftedStatic(s)          => parts.headOption match 
         case Some(LiftedStatic(s1)) => parts.update(0, LiftedStatic(s + s1))
-        case _                => parts.prepend(LiftedStatic(s))
+        case _                      => parts.prepend(LiftedStatic(s))
       case d: LiftedDynamic         => parts.prepend(d)
     return this
   }

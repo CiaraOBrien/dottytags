@@ -323,14 +323,15 @@ private def styleMacro(style: Expr[StyleClass], setTo: Expr[String])(using Quote
   case Some(setTo: String) => stick_style(Expr(cls.name + ": " + pxifyStatic(escape(setTo), cls.px) + "; "))
   case _ => stick_style(stick_splice(Expr(cls.name + ": "), pxifyDynamic('{escape($setTo)}, cls.px), Expr("; ")))
 }.getOrElse(error("Style class must be static."))
+
 /** Pxifies a static string: if it doesn't already end with 'px', add it */
 private def pxifyStatic (s: String, px: Boolean): String  = if px && !s.endsWith("px") then s + "px" else s
+
 /**
   * Pxifies a dynamic string: if, at runtime, its computed value doesn't already end with 'px', add it.
   * @see [[_sticky._pxifyOutOfLine]]
   */
 private def pxifyDynamic(s: Expr[String], px: Boolean)(using Quotes): Expr[String] = if px then '{ _sticky._pxifyOutOfLine($s) } else s
-
 
 inline def concatStrLits(inline str1: String, inline str2: String): String = ${ concatStrLitsMacro('str1, 'str2) }
 private def concatStrLitsMacro(str1: Expr[String], str2: Expr[String])(using Quotes): Expr[String] = 
