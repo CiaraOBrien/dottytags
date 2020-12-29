@@ -1,4 +1,4 @@
-package dottytags
+package dottytags.predefs
 
 import scala.annotation.targetName
 

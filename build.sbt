@@ -34,7 +34,10 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 		libraryDependencies += "com.lihaoyi" % "scalatags_2.13" % "0.9.2" % "test",
 	)
 	.jsSettings (
-		libraryDependencies += "com.lihaoyi" % "scalatags_sjs1_2.13" % "0.9.2" % "test",
+	  libraryDependencies += "com.lihaoyi" % "scalatags_sjs1_2.13" % "0.9.2",
+		scalaJSUseMainModuleInitializer in Compile := true,
+		mainClass in Compile := Some("test.TestMain"),
+		jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
 	)
 
 lazy val playground = project.in(file("playground"))

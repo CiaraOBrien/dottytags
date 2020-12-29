@@ -8,7 +8,7 @@ import dottytags._
 object implicits {
 
   given elemToElem: Conversion[Element, Element] = (e: Element) => e
-  given implicitFrag: Conversion[Seq[Element], Frag] = frag(_)
+  //given implicitFrag: Conversion[Seq[Element], Frag] = frag(_)
   given seqToFrag[A](using c: Conversion[A, Element]): Conversion[Seq[A], Frag] = (seq: Seq[A]) => bind(seq.map(c))
   given numericToString[A](using n: Numeric[A]): Conversion[A, String] = _.toString
 
