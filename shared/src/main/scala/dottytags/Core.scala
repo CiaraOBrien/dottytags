@@ -8,174 +8,201 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 import utils._
 
-/** 
-  * "Sticky Note" methods that are inserted into the macro expansion as short-lived tags
-  * which do not make it into the final output and which should not be used by the calling
-  * code (hence the mangled names). They must be public though, since they are called from
-  * macro-generated code inlined at the call site. This is extremely cursed and maybe eventually I'll
-  * get around to making it nicer, more elegant, and maybe improve the API at the same time!
+// """ADT""" Classes
+
+/**
+  * The true nature of an attribute value. If you can see this as the type of an object at runtime, you're probably
+  * not using dottytags right, this is sort of like the singularity of a black hole, it's not supposed to be naked. 
   */
-private[dottytags] object _sticky {
+final class Attr  private[dottytags] (val str: String) { 
+  override def toString = str 
+}
+private[dottytags] object Attr {
   /**
-    * At compile-time, acts as a flag that its arguments must be spliced, and is removed if
-    * the splice is seamless (no dynamic chunks leftover, everything can be concatenated into one big string literal).
-    * At runtime, finalizes the splicing process, concatenating the 
-    * compile-time-concatenated static chunks with their dynamic neighbors.
-    */
-  def _splice(parts: String*): String = {
-    val sb = new StringBuilder()
-    var i = 0
-    val len = parts.size
-    while i < len do {
-      sb.append(parts(i))
-      i = i + 1
-    }
-    sb.toString
-  }
-  /**
-    * Experiment to see if using single methods is better than inlining some of this stuff.
-    * @see [[Core.unstick_dyn_frag]]
-    */
-  def _splice_escaping(parts: Seq[Element]): String = {
-    val sb = new StringBuilder()
-    var i = 0
-    val len = parts.size
-    while i < len do {
-      sb.append(parts(i) match
-        case s: String => dottytags.utils.escape(s)
-        case e         => _sticky._renderOutOfLine(e)
-      )
-      i = i + 1
-    }
-    sb.toString
-  }
-  /**
-    * At compile-time, acts as a flag that its argument expression represents an attribute,
-    * and is usually removed by the enclosing [[Core.tag]] invocation.
+    * At compile-time, Attr(expr) acts as a flag that its argument expression represents an attribute,
+    * and is usually removed by the enclosing [[tag]] invocation.
     * At runtime, initializes a naked dynamic [[Attr]] to hold its computed contents.
     */
-  def _attr       (s: String): Attr   = new Attr(s)
+  def apply (s: String): Attr = new Attr(s)
+}
+
+/**
+  * The true nature of a style value. If you can see this as the type of an object at runtime, you're probably
+  * not using dottytags right, this is sort of like the singularity of a black hole, it's not supposed to be naked.
+  */
+final class Style private[dottytags] (val str: String) { 
+  override def toString = str 
+}
+private[dottytags] object Style {
   /**
-    * At compile-time, acts as a flag that its argument expression represents a style,
-    * and is usually removed by the enclosing [[Core.tag]] invocation.
+    * At compile-time, `Style(expr)` acts as a flag that its argument expression represents a style,
+    * and is usually removed by the enclosing [[tag]] invocation.
     * At runtime, initializes a naked dynamic [[Style]] to hold its computed contents.
     */
-  def _style      (s: String): Style  = new Style(s)
+  def apply (s: String): Style = new Style(s)
+}
+
+/**
+  * The true nature of a raw value. If you can see this as the type of an object at runtime, you're probably
+  * not using dottytags right, this is sort of like the singularity of a black hole, it's not supposed to be naked.
+  */
+final class Raw   private[dottytags] (val str: String) { 
+  override def toString = str 
+}
+private[dottytags] object Raw {
   /**
-    * At compile-time, acts as a flag that its argument expression represents a string which should not be escaped,
-    * and is usually removed by the enclosing [[Core.tag]] invocation.
+    * At compile-time, Raw(expr) acts as a flag that its argument expression represents a string which should not be escaped,
+    * and is usually removed by the enclosing [[tag]] invocation.
     * At runtime, initializes a naked dynamic [[Raw]] to hold its computed contents.
     */
-  def _raw        (s: String): Raw    = new Raw(s)
+  def apply (s: String): Raw = new Raw(s)
+}
+
+/**
+  * The true nature of the result of splicing a tag tree. Unlike [[Attr]], [[Style]], [[Raw]], and [[Frag]],
+  * it's normal to see this quite often as the type of an object at runtime, though of course you should call
+  * [[render]] rather than screwing around with a naked tag.
+  */
+final class Tag private[dottytags] (val str: String) { 
+  override def toString = str 
+}
+private[dottytags] object Tag {
   /**
-    * At compile-time, acts as a flag that its argument expression represents a tag,
-    * and is usually removed by the enclosing [[Core.tag]] invocation.
+    * At compile-time, `Tag(expr)` acts as a flag that its argument expression represents a tag,
+    * and is usually removed by the enclosing [[tag]] invocation.
     * At runtime, initializes a naked dynamic [[Tag]] to hold its computed contents.
-    * This is the only one of the sticky methods besides [[_splice]] and [[_frag]] which is expected to usually show up
+    * This is the only one of the flag methods besides [[splice]] and [[Frag.apply]] which is expected to usually show up
     * in the final macro-expanded code. The overhead of allocating a few [[Tag]]s here and there is
-    * probably negligible. It would be possible to get the [[Core.render]] method to elide
-    * the top-level sticky method if appropriate, but that would be a waste of everyone's time.
+    * probably negligible. It would be possible to get the [[render]] method to elide
+    * the top-level flag methods if appropriate, but that would be a waste of everyone's time.
     */
-  def _tag        (s: String): Tag    = new Tag(s)
+  def apply (s: String): Tag = new Tag(s)
+}
+
+/**
+  * The true nature of a frag value. If you can see this as the type of an object at runtime, you're probably
+  * not using dottytags right, this is sort of like the singularity of a black hole, it's not supposed to be naked.
+  */
+final class Frag  private[dottytags] (val s: Seq[Element]) { 
+  override def toString = s.mkString("") 
+}
+private[dottytags] object Frag {
   /**
     * At compile-time, acts as a flag that its sequence of argument expression represents a frag,
-    * and is sometimes removed by the enclosing [[Core.tag]] invocation.
+    * and is sometimes removed by the enclosing [[tag]] invocation.
     * At runtime, initializes a naked dynamic [[Frag]] to hold its computed contents.
-    * This is the only one of the sticky methods besides [[_splice]] and [[_tag]] which is expected to usually show up
+    * This is the only one of the sticky methods besides [[splice]] and [[Tag.apply]] which is expected to usually show up
     * in the final macro-expanded code. The overhead of allocating a few [[Frag]]s here and there is
     * probably negligible.
     */
-  def _frag (s: Seq[Element]): Frag   = new Frag(s)
-  /**
-    * Actually renders an [[Entity]] to a [[String]] at runtime, without getting inlined. 
-    * This isn't intended for client code to use, [[Core.render]] already falls through to this
-    * inline for entities whose exact time isn't statically known.
-    * @see [[Core.render]]
-    */
-  def _renderOutOfLine(e: Entity): String = e match
-    case a: Attr   => a.str
-    case s: Style  => s.str
-    case r: Raw    => r.str
-    case t: Tag    => t.str
-    case f: Frag   => _sticky._splice(f.s.map(_renderOutOfLine): _*)
-    case s: String => s
-  /**
-    * @see [[dottytags.Core.pxifyDynamic]]
-    */
-  def _pxifyOutOfLine(s: String): String = if s.endsWith("px") then s else s + "px"
-  /**
-    * The true nature of an attribute value. If you can see this as the type of an object at runtime, you're probably
-    * not using dottytags right, this is sort of like the singularity of a black hole, it's not supposed to be naked.
-    */
-  final class Attr  private[_sticky] (val str: String)     { override def toString = str }
-  /**
-    * The true nature of a style value. If you can see this as the type of an object at runtime, you're probably
-    * not using dottytags right, this is sort of like the singularity of a black hole, it's not supposed to be naked.
-    */
-  final class Style private[_sticky] (val str: String)     { override def toString = str }
-  /**
-    * The true nature of a raw value. If you can see this as the type of an object at runtime, you're probably
-    * not using dottytags right, this is sort of like the singularity of a black hole, it's not supposed to be naked.
-    */
-  final class Raw   private[_sticky] (val str: String)     { override def toString = str }
-  /**
-    * The true nature of the result of splicing a tag tree. Unlike [[Attr]], [[Style]], [[Raw]], and [[Frag]],
-    * it's normal to see this quite often as the type of an object at runtime, though of course you should call
-    * [[Core.render]] rather than screwing around with a naked tag.
-    */
-  final class Tag   private[_sticky] (val str: String)     { override def toString = str }
-  /**
-    * The true nature of a frag value. If you can see this as the type of an object at runtime, you're probably
-    * not using dottytags right, this is sort of like the singularity of a black hole, it's not supposed to be naked.
-    */
-  final class Frag  private[_sticky] (val s: Seq[Element]) { override def toString = s.mkString }
-  // Prevent the generation of constructor proxy objects, which break the export clause
-  object Attr; object Style; object Raw; object Tag; object Frag;
-  /** 
-    * An [[Entity]] that is not allowed to be part of a [[Frag]].
-    * We use types instead of trait inheritance (at the moment) because we need to 
-    * transparently include [[String]]s in the type hierarchy.
-    * @see [[Element]]
-    */
-  type Modifier = Attr | Style
-  /** 
-    * An [[Entity]] that is allowed to be part of a [[Frag]].
-    * We use types instead of trait inheritance (at the moment) because we need to 
-    * transparently include [[String]]s in the type hierarchy.
-    * @see [[Modifier]]
-    */
-  type Element = Raw | Tag | Frag | String
-  /** 
-    * Something [[String]]y (see [[dottytags.Core.render]]) that represents, in and of itself, a coherent
-    * component of an XML tree. [[dottytags.TagClass!]]es, [[dottytags.AttrClass!]]es, and [[dottytags.StyleClass!]]es do not
-    * make the cut because while they are valid names for XML objects, they cannot meaningfully exist
-    * on their own among their peers. We use types instead of trait inheritance (at the moment) because we need to 
-    * transparently include [[String]]s in the type hierarchy.
-    * @see [[Modifier]]
-    * @see [[Element]]
-    */
-  type Entity = Modifier | Element
+  def apply (s: Seq[Element]): Frag = new Frag(s)
 }
 
-export _sticky.{Attr, Style, Raw, Tag, Frag, Modifier, Element, Entity}
+// """ADT""" Trait-like things
+
+/** 
+  * An [[Entity]] that is not allowed to be part of a [[Frag]].
+  * We use types instead of trait inheritance (at the moment) because we need to 
+  * transparently include [[String]]s in the type hierarchy.
+  * @see [[Element]]
+  */
+type Modifier = Attr | Style
+/** 
+  * An [[Entity]] that is allowed to be part of a [[Frag]].
+  * We use types instead of trait inheritance (at the moment) because we need to 
+  * transparently include [[String]]s in the type hierarchy.
+  * @see [[Modifier]]
+  */
+type Element = Raw | Tag | Frag | String
+/** 
+  * Something [[String]]y (see [[render]]) that represents, in and of itself, a coherent
+  * component of an XML tree. [[TagClass!]]es, [[AttrClass!]]es, and [[StyleClass!]]es do not
+  * make the cut because while they are valid names for XML objects, they cannot meaningfully exist
+  * on their own among their peers. We use types instead of trait inheritance (at the moment) because we need to 
+  * transparently include [[String]]s in the type hierarchy.
+  * @see [[Modifier]]
+  * @see [[Element]]
+  */
+type Entity = Modifier | Element
+
+// Splicing and rendering
+
+/**
+  * At compile-time, acts as a flag that its arguments must be spliced, and is removed if
+  * the splice is seamless (no dynamic chunks leftover, everything can be concatenated into one big string literal).
+  * At runtime, finalizes the splicing process, concatenating the 
+  * compile-time-concatenated static chunks with their dynamic neighbors.
+  */
+private def splice(parts: String*): String = {
+  val sb = new StringBuilder()
+  var i = 0
+  val len = parts.size
+  while i < len do {
+    sb.append(parts(i))
+    i = i + 1
+  }
+  sb.toString
+}
+
+/**
+  * Splices a sequence of elements together at runtime while escaping
+  * all non-raw strings, for rendering dynamic [[Frag]]s.
+  */
+private def spliceEscape(parts: Seq[Element]): String = {
+  val sb = new StringBuilder()
+  var i = 0
+  val len = parts.size
+  while i < len do {
+    sb.append(parts(i) match
+      case s: String => utils.escape(s)
+      case e         => renderOutOfLine(e)
+    )
+    i = i + 1
+  }
+  sb.toString
+}
+
+/** 
+  * Shortcut for [[splice]] invocations in macros.
+  * If `parts` only contains one `Expr[String]`, passes it through without splicing.
+  */
+private def spliced(parts: Expr[String]*) (using Quotes): Expr[String] =  parts match 
+                    case    Seq(head: Expr[String]) => head
+                    case s: Seq[Expr[String]]       => '{ splice(${BetterVarargs(s)}: _*) }
+
+/**
+  * Actually renders a dynamic [[Entity]] to a [[String]] at runtime, without getting inlined.
+  * [[render]] already falls through to this inline for entities whose exact type isn't statically known.
+  * @see [[render]]
+  */
+private def renderOutOfLine(e: Entity): String = e match
+  case a: Attr   => a.str
+  case s: Style  => s.str
+  case r: Raw    => r.str
+  case t: Tag    => t.str
+  case f: Frag   => splice(f.s.map(renderOutOfLine): _*)
+  case s: String => s
+
+/** Runtime implementation of [[pxifyDynamic]] */
+private def pxifyOutOfLine(s: String): String = if s.endsWith("px") then s else s + "px"
 
 /**
   * "Renders" an [[Entity]] to a [[String]]. Of course, most entities are to a large extent
   * pre-rendered at compile-time if you're using the library right, so this is mostly just
   * a unified way of turning an already-[[String]]y datatype into a proper [[String]]. This
   * will hopefully get inlined to either a call to the relevant getter method or a call to
-  * [[_sticky._splice]], but falls through to a call to [[_sticky._renderOutOfLine]] when the type of
-  * `e` isn't statically known at compile-time.
-  * @see [[_sticky._renderOutOfLine]]
+  * [[splice]], but falls through to a call to [[renderOutOfLine]] when the type of
+  * `e` isn't statically known at compile-time. 
+  * @see [[renderOutOfLine]]
   */
 extension (inline e: Entity) inline def render: String = inline e match
   case a: Attr   => a.str
   case s: Style  => s.str
   case r: Raw    => r.str
   case t: Tag    => t.str
-  case f: Frag   => _sticky._splice(f.s.map(_sticky._renderOutOfLine): _*)
+  case f: Frag   => splice(f.s.map(renderOutOfLine): _*)
   case s: String => s
-  case _         => _sticky._renderOutOfLine(e)
+  case _         => renderOutOfLine(e)
 
 /**
   * Private convenience method for erroring out during macro expansion.
@@ -188,27 +215,11 @@ private[dottytags] def error(error: String)(using Quotes): Nothing = {
   throw scala.quoted.runtime.StopMacroExpansion()
 }
 
-/** 
-  * Shortcut for [[_sticky._splice]] invocations in macros.
-  * If `parts` only contains one `Expr[String]`, passes it through without splicing.
-  */
-private def stick_splice(parts: Expr[String]*) (using Quotes): Expr[String] =  parts match 
-                    case    Seq(head: Expr[String])                         => head
-                    case s: Seq[Expr[String]]                               => '{ _sticky._splice(${Varargs(s)}: _*) }
-/** Shortcut for [[_sticky._attr]] invocations in macros. */
-private def stick_attr  (s: Expr[String])      (using Quotes): Expr[Attr]   =  '{ _sticky._attr ($s) }
-/** Shortcut for [[_sticky._style]] invocations in macros. */
-private def stick_style (s: Expr[String])      (using Quotes): Expr[Style]  =  '{ _sticky._style($s) }
-/** Shortcut for [[_sticky._raw]] invocations in macros. */
-private def stick_raw   (s: Expr[String])      (using Quotes): Expr[Raw]    =  '{ _sticky._raw  ($s) }
-/** Shortcut for [[_sticky._tag]] invocations in macros. */
-private def stick_tag   (s: Expr[String])      (using Quotes): Expr[Tag]    =  '{ _sticky._tag  ($s) }
-/** Shortcut for [[_sticky._frag]] invocations in macros. */
-private def stick_frag  (s: Expr[Seq[Element]])(using Quotes): Expr[Frag]   =  '{ _sticky._frag ($s) }
+// Tree construction macros
 
 /** 
   * This is pretty much where all the magic happens, everything that can be statically determined gets
-  * concatenated at compile-time, then everything gets spliced together with [[_sticky._splice]], which boils down to building a [[StringBuilder]]
+  * concatenated at compile-time, then everything gets spliced together with [[splice]], which boils down to building a [[StringBuilder]]
   * from an [[Array]], where the array elements alternate between pre-concatenated static chunks and bits of code that generate
   * the dynamic elements.
   * 
@@ -220,12 +231,12 @@ private def stick_frag  (s: Expr[Seq[Element]])(using Quotes): Expr[Frag]   =  '
   * ```
   * Boils down to something like:
   * ```scala
-  * println(dottytags.Core._sticky._tag(
-  *   dottytags.Core._sticky._splice(
-  *     scala.runtime.ScalaRunTime.wrapRefArray(
-  *       ["<html class=\"foo\" href=\"bar\" style=\"baz: qux;\">quux",
-  *       dottytags.escape(scala.Long.box(System.currentTimeMillis()).toString())
-  *         , "a</html>"]
+  * println(Tag(
+  *   splice(
+  *     Array(
+  *       "<html class=\"foo\" href=\"bar\" style=\"baz: qux;\">quux",
+  *       utils.escape(scala.Long.box(System.currentTimeMillis()).toString()), 
+  *       "a</html>"
   *     )
   *   )
   * ).str())
@@ -235,7 +246,6 @@ private def stick_frag  (s: Expr[Seq[Element]])(using Quotes): Expr[Frag]   =  '
   * <html class="foo" href="bar" style="baz1: qux; baz2: qux;">quux1608810396295a</html>
   * ```
   */
-inline implicit def tagClass2EmptyTag(inline cl: TagClass): Tag = cl()
 extension (inline cl: TagClass) inline def apply(inline args: Entity*): Tag = ${ tagMacro('cl)('args) }
 private def tagMacro(cl: Expr[TagClass])(args: Expr[Seq[Entity]])(using Quotes): Expr[Tag] = {
   import quotes.reflect._
@@ -249,26 +259,26 @@ private def tagMacro(cl: Expr[TagClass])(args: Expr[Seq[Entity]])(using Quotes):
   
   def iter(as: Seq[Expr[Entity]]): Unit = as.foreach{_ match 
     // Static attr/style/tag/raw string:
-    case '{_sticky._attr($s)}  => attrs .appendAll(LiftedSplice.lift(s))
-    case '{_sticky._style($s)} => styles.appendAll(LiftedSplice.lift(s))
-    case '{_sticky._tag($s)}   => body  .appendAll(LiftedSplice.lift(s))
-    case '{_sticky._raw($s)}   => body  .appendAll(LiftedSplice.lift(s))
-    // Static frag, can be decomposed:
-    case '{_sticky._frag(${BetterVarargs(s)})} => iter(s)
+    case '{Attr($s)}  => attrs .appendAll(LiftedSplice.lift(s))
+    case '{Style($s)} => styles.appendAll(LiftedSplice.lift(s))
+    case '{Tag($s)}   => body  .appendAll(LiftedSplice.lift(s))
+    case '{Raw($s)}   => body  .appendAll(LiftedSplice.lift(s))
+    // Static frag, can be iterated over:
+    case '{Frag(${BetterVarargs(s)})} => iter(s)
     // Dynamic attr/style/tag/raw string:
     case '{$e: Attr}  => attrs .append(Span.lift('{$e.str}))
     case '{$e: Style} => styles.append(Span.lift('{$e.str}))
     case '{$e: Tag}   => body  .append(Span.lift('{$e.str}))
     case '{$e: Raw}   => body  .append(Span.lift('{$e.str}))
     // Static frag with a dynamic interior, _frag call can be elided by extracting the Expr[Seq[Element]]
-    case '{_sticky._frag(${e: Expr[Seq[Element]]})} => body.append(LiftedDynamic('{_sticky._splice_escaping($e)}))
+    case '{Frag(${e: Expr[Seq[Element]]})} => body.append(LiftedDynamic('{spliceEscape($e)}))
     // Dynamic frag, must be completely spliced (and escaped) at runtime:
-    case '{$e: Frag} => body.append(LiftedDynamic('{_sticky._splice_escaping($e.s)}))
+    case '{$e: Frag} => body.append(LiftedDynamic('{spliceEscape($e.s)}))
     // Static or dynamic non-raw string (must be escaped):
     case '{$e: String} => body.append(Span.lift(e) match 
       case LiftedStatic(str) => LiftedStatic(escape(str))
-      case LiftedDynamic(e) => LiftedDynamic('{escape($e)}))
-    // Lol idk
+      case LiftedDynamic(e)  => LiftedDynamic('{escape($e)}))
+    // Whoops
     case e => error("Error, unable to expand expression:\n" + e.show)
   }
 
@@ -277,16 +287,19 @@ private def tagMacro(cl: Expr[TagClass])(args: Expr[Seq[Entity]])(using Quotes):
                       else styles.stripTrailingSpace.prepend(LiftedStatic("style=\"")).append(LiftedStatic("\""))
     if body.isEmpty   then body.prepend(LiftedStatic(if selfClosing then "/>" else s"></$sname>"))
                       else body.prepend(LiftedStatic(">")).append(LiftedStatic(s"</$sname>"))
-    stick_tag(stick_splice(attrs.appendAll(styles).appendAll(body).exprs: _*))
-  }.getOrElse(error("Error, unable to expand varargs:\n" + args.show))
+    '{Tag(${spliced(attrs.appendAll(styles).appendAll(body).exprs: _*)})}
+  }.getOrElse(error("Error, unable to traverse varargs:\n" + args.show))
 }
 
-/** The simplest macro, just tags `raw` with [[stick_raw]] */
+/** To allow for tags to be specified with just a name and no body to make them empty. */
+inline implicit def tagClass2EmptyTag(inline cl: TagClass): Tag = cl()
+
+/** The simplest macro, just tags `raw` with [[Raw]] */
 inline def raw(inline raw: String): Raw = ${ rawMacro('raw) }
-private def rawMacro(raw: Expr[String])(using Quotes): Expr[Raw] = stick_raw(raw)
+private def rawMacro(raw: Expr[String])(using Quotes): Expr[Raw] = '{Raw($raw)}
 
 /** 
-  * Binds up the given elements, escaping any non-[[raw]] strings pre-emptively.
+  * Binds up the given elements, escaping any non-[[Raw]] strings pre-emptively.
   * This cannot handle being passed actual [[Seq]]s due to the vicissitudes of varargs, for that you'll want [[bind]].
   * @see[[bind]]
   */
@@ -297,21 +310,22 @@ inline def frag(inline elems: Element*): Frag = ${ fragMacro('elems) }
   */
 inline def bind(inline elems: Seq[Element]): Frag = ${ fragMacro('elems) }
 private def fragMacro(elems: Expr[Seq[Element]])(using Quotes): Expr[Frag] = elems match 
-  case BetterVarargs(as) => stick_frag(BetterVarargs(as))
-  case e: Expr[Seq[Element]] => stick_frag(e)
-  case e => error("Error, unable to expand:\n" + e.show)
+  case BetterVarargs(as) => '{Frag(${BetterVarargs(as)})}
+  case e: Expr[Seq[Element]] => '{Frag($e)}
+  case e => error("Error, unable to traverse or expand:\n" + e.show)
 private def fragMacroVals(elems: Expr[Seq[AnyVal]])(using Quotes): Expr[Frag] = elems match 
-  case BetterVarargs(as) => stick_frag(BetterVarargs(as.map(a => '{$a.toString})))
-  case e: Expr[Seq[AnyVal]] => stick_frag('{$e.map(_.toString)})
-  case e => error("Error, unable to expand:\n" + e.show)
+  case BetterVarargs(as) => '{Frag(${BetterVarargs(as.map(a => '{$a.toString}))})}
+  case e: Expr[Seq[AnyVal]] => '{Frag($e.map(_.toString))}
+  case e => error("Error, unable to traverse or expand:\n" + e.show)
 
-/** Just checks `attr` is static, escapes `value`, and then splices together the attribute string.
+/** 
+  * Just checks `attr` is static, escapes `value`, and then splices together the attribute string.
   * If we move to a less cursed system using actual case classes or whatever then this can become a member method of [[AttrClass!]].
   */
 extension (inline attr: AttrClass) @targetName("setAttr") inline def :=(inline value: String): Attr = ${ attrMacro('attr, 'value) }
 private def attrMacro(attr: Expr[AttrClass], setTo: Expr[String])(using Quotes): Expr[Attr] = attr.value.map { cls => setTo.value match 
-  case Some(setTo: String) => stick_attr(Expr(cls.name + "=\"" + escape(setTo) + "\" "))
-  case _ => stick_attr(stick_splice(Expr(cls.name + "=\""), '{escape($setTo)}, Expr("\" ")))
+  case Some(setTo: String) => '{Attr(${        Expr(cls.name + "=\""   + escape(setTo)       + "\" ")})}
+  case _                   => '{Attr(${spliced(Expr(cls.name + "=\""), '{escape($setTo)}, Expr("\" "))})}
 }.getOrElse(error("Attribute class must be static."))
 
 /**
@@ -322,22 +336,15 @@ private def attrMacro(attr: Expr[AttrClass], setTo: Expr[String])(using Quotes):
   */
 extension (inline style: StyleClass) @targetName("setStyle") inline def :=(inline value: String): Style = ${ styleMacro('style, 'value) }
 private def styleMacro(style: Expr[StyleClass], setTo: Expr[String])(using Quotes): Expr[Style] = style.value.map { cls => setTo.value match
-  case Some(setTo: String) => stick_style(Expr(cls.name + ": " + pxifyStatic(escape(setTo), cls.px) + "; "))
-  case _ => stick_style(stick_splice(Expr(cls.name + ": "), pxifyDynamic('{escape($setTo)}, cls.px), Expr("; ")))
+  case Some(setTo: String) => '{Style(${Expr(cls.name + ": " + pxifyStatic(escape(setTo), cls.px) + "; ")})}
+  case _ => '{Style(${spliced(Expr(cls.name + ": "), pxifyDynamic('{escape($setTo)}, cls.px), Expr("; "))})}
 }.getOrElse(error("Style class must be static."))
-
 /** Pxifies a static string: if it doesn't already end with 'px', add it */
 private def pxifyStatic (s: String, px: Boolean): String  = if px && !s.endsWith("px") then s + "px" else s
+/** Pxifies a dynamic string: if, at runtime, its computed value doesn't already end with 'px', add it. */
+private def pxifyDynamic(s: Expr[String], px: Boolean)(using Quotes): Expr[String] = if px then '{ pxifyOutOfLine($s) } else s
 
-/**
-  * Pxifies a dynamic string: if, at runtime, its computed value doesn't already end with 'px', add it.
-  * @see [[_sticky._pxifyOutOfLine]]
-  */
-private def pxifyDynamic(s: Expr[String], px: Boolean)(using Quotes): Expr[String] = if px then '{ _sticky._pxifyOutOfLine($s) } else s
-
-inline def concatStrLits(inline str1: String, inline str2: String): String = ${ concatStrLitsMacro('str1, 'str2) }
-private def concatStrLitsMacro(str1: Expr[String], str2: Expr[String])(using Quotes): Expr[String] = 
-  Expr(str1.value.getOrElse(error("str1 must be static.")) + str2.value.getOrElse(error("str2 must be static.")))
+// Random testing methods
 
 inline def showCode(inline a: Any): Unit = ${ showCodeMacro('a) }
 private def showCodeMacro(a: Expr[Any])(using Quotes): Expr[Unit] = {
