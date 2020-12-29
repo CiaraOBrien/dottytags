@@ -1,3 +1,10 @@
+package dottytags.predefs
+
+import scala.annotation.targetName
+import scala.language.adhocExtensions // Just because I extend StyleClass doesn't mean you should!
+
+import dottytags._
+
 /*
  * Documentation marked "MDN" is thanks to Mozilla Contributors
  * at https://developer.mozilla.org/en-US/docs/Web/API and available
@@ -10,11 +17,6 @@
  * This whole file is, of course, adapted from scalatags:
  * https://github.com/lihaoyi/scalatags/blob/master/scalatags/src/scalatags/generic/Styles.scala
  */
-
-package dottytags
-
-import scala.annotation.targetName
-import scala.language.adhocExtensions // Just because I extend StyleClass doesn't mean you should!
 
 object styles {
 

@@ -1,12 +1,11 @@
 package play
 
 import dottytags._
-import dottytags.implicits.given
+import dottytags.utils.implicits.given
 import scala.language.implicitConversions
-import dottytags.tags._
-import dottytags.svg._
-import dottytags.attrs._
-import dottytags.styles._
+import dottytags.predefs.tags._
+import dottytags.predefs.attrs._
+import dottytags.predefs.styles._
 
 object Playground:
   def main(args: Array[String]): Unit =
@@ -24,7 +23,7 @@ object Playground:
 
       ),
       body(
-        h1("This is my <<<< title", cssPx("weight") := System.currentTimeMillis.toString),
+        h1("This is my <<<< title", css("weight") := System.currentTimeMillis.toString),
         div("posts"),
         for ((name, text) <- posts) yield div(
             h2("Post by ", name),

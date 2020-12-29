@@ -1,5 +1,6 @@
-package dottytags
+package dottytags.predefs
 
+import dottytags._
 
 /*
  * This whole file is, of course, adapted from scalatags (see LICENSE for copyright notice):
@@ -102,7 +103,7 @@ object tags {
   * Contains builtin tags which are used less frequently. These are not imported by
   * default to avoid namespace pollution.
   */
-object extraTags {
+object miscTags {
   // Document metadata
   inline def title      = tag("title")
   inline def style      = tag("style")

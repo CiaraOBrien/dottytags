@@ -3,6 +3,8 @@ package dottytags
 import scala.quoted._
 import scala.collection.mutable.ListBuffer
 
+import utils._
+
 /**
   * Lifts strings into the the splicing operation, as [[LiftedSplice]] lifts
   * the operation itself.

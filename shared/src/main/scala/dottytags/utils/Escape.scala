@@ -1,4 +1,4 @@
-package dottytags
+package dottytags.utils
 
 import java.io.StringWriter
 

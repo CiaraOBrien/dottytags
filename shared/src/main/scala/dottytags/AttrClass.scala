@@ -2,6 +2,8 @@ package dottytags
 
 import scala.quoted._
 
+import utils._
+
 /**
   * Represents a valid name for an [[dottytags.Core.Attr]] 
   * (that is, a string literal containing a valid XML attribute name).

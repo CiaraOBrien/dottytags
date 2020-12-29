@@ -2,6 +2,8 @@ package dottytags
 
 import scala.annotation.targetName
 
+import dottytags._
+
 /*
  * Documentation marked "MDN" is thanks to Mozilla Contributors
  * at https://developer.mozilla.org/en-US/docs/Web/API and available

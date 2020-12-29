@@ -1,4 +1,6 @@
-package dottytags
+package dottytags.predefs
+
+import dottytags._
 
 /*
  * Documentation marked "MDN" is thanks to Mozilla Contributors

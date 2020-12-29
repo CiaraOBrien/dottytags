@@ -2,6 +2,8 @@ package dottytags
 
 import scala.quoted._
   
+import utils._
+
 /**
   * Represents a valid name for a [[dottytags.Core.Style]] 
   * (that is, a string literal containing a valid CSS style name).
@@ -13,6 +15,7 @@ import scala.quoted._
 class StyleClass (val name: String, val px: Boolean) {
   
 }
+
 
 /**
   * Creates a static [[StyleClass!]], suitable for consumption by [[dottytags.Core.:=]].

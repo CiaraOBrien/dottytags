@@ -6,6 +6,8 @@ import scala.unchecked
 import scala.language.implicitConversions
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
+import utils._
+
 /** 
   * "Sticky Note" methods that are inserted into the macro expansion as short-lived tags
   * which do not make it into the final output and which should not be used by the calling
@@ -40,7 +42,7 @@ private[dottytags] object _sticky {
     val len = parts.size
     while i < len do {
       sb.append(parts(i) match
-        case s: String => dottytags.escape(s)
+        case s: String => dottytags.utils.escape(s)
         case e         => _sticky._renderOutOfLine(e)
       )
       i = i + 1
