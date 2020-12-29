@@ -4,9 +4,10 @@ import scala.quoted._
 import scala.collection.mutable.ListBuffer
 
 /**
-  * Something that can be [[Splice]]d. Intended for use at compile-time.
-  * @see [[Static]]
-  * @see [[Dynamic]]
+  * Lifts strings into the the splicing operation, as [[LiftedSplice]] lifts
+  * the operation itself.
+  * @see [[LiftedStatic]]
+  * @see [[LiftedDynamic]]
   */
 private[dottytags] trait Span
 
@@ -19,94 +20,92 @@ private[dottytags] object Span {
     * @see [[Splice.lift]]
     */
   def lift(s: Expr[String])(using Quotes): Span = s match 
-    case Expr(s: String) => Static(s)
-    case dyn: Expr[String] => Dynamic(dyn)
+    case Expr(s: String) => LiftedStatic(s)
+    case dyn: Expr[String] => LiftedDynamic(dyn)
 
 }
 /**
-  * Something that can be [[Splice]]d with adjacent `Static`s at compile-time since it is statically-known.
-  * Intended for use at compile-time.
+  * Lifts a statically-known string into the splicing context.
   */
-private[dottytags] case class Static(str: String) extends Span
+private[dottytags] case class LiftedStatic(str: String) extends Span
 /**
-  * Something that can only be [[Splice]]d at runtime.
-  *  Intended for use at compile-time.
+  * Lifts a dynamic string into the splicing context.
   */
-private[dottytags] case class Dynamic(expr: Expr[String]) extends Span
+private[dottytags] case class LiftedDynamic(expr: Expr[String]) extends Span
 /**
-  * Splices together [[Span]]s as much as possible at compile-time, then is
+  * Lifts the operation of concatenating strings by concatenating [[Span]]s as much as possible at compile-time, then is
   * decomposed into a [[scala.collections.Seq]] of [[scala.quoted.Expr]]s and inlined at the render site.
   * This whole class is almost definitely an obscene performance bottleneck but it's all at compile-time
   * so lol who cares.
   */
-private[dottytags] class Splice(seq: Seq[Span]) {
+private[dottytags] class LiftedSplice(seq: Seq[Span]) {
   private var parts = ListBuffer().appendAll(seq)
   /**
-    * Appends the given [[Span]] to this [[Splice]] and returns. If `s` is [[Static]]
-    * then it may be concatenated with the previous [[Span]] if it is also [[Static]].
+    * Appends the given [[Span]] to this [[LiftedSplice]] and returns. If `s` is [[LiftedStatic]]
+    * then it may be concatenated with the previous [[Span]] if it is also [[LiftedStatic]].
     */
-  def append(s: Span): Splice = { 
+  def append(s: Span): LiftedSplice = { 
     s match
-      case Static(s) => parts.lastOption match 
-        case Some(Static(s1)) => parts.update(parts.size - 1, Static(s1 + s))
-        case _                => parts.append(Static(s))
-      case d: Dynamic         => parts.append(d)
+      case LiftedStatic(s)  => parts.lastOption match 
+        case Some(LiftedStatic(s1)) => parts.update(parts.size - 1, LiftedStatic(s1 + s))
+        case _                      => parts.append(LiftedStatic(s))
+      case d: LiftedDynamic => parts.append(d)
     return this
   }
   /**
-    * Prepends the given [[Span]] to this [[Splice]] and returns. If `s` is [[Static]]
-    * then it may be concatenated (prepending) with the previous [[Span]] if it is also [[Static]].
+    * Prepends the given [[Span]] to this [[LiftedSplice]] and returns. If `s` is [[LiftedStatic]]
+    * then it may be concatenated (prepending) with the previous [[Span]] if it is also [[LiftedStatic]].
     */
-  def prepend(s: Span): Splice = { 
+  def prepend(s: Span): LiftedSplice = { 
     s match 
-      case Static(s) => parts.headOption match 
-        case Some(Static(s1)) => parts.update(0, Static(s + s1))
-        case _                => parts.prepend(Static(s))
-      case d: Dynamic         => parts.prepend(d)
+      case LiftedStatic(s) => parts.headOption match 
+        case Some(LiftedStatic(s1)) => parts.update(0, LiftedStatic(s + s1))
+        case _                => parts.prepend(LiftedStatic(s))
+      case d: LiftedDynamic         => parts.prepend(d)
     return this
   }
   /**
-    * Adds the given [[Splice]] to the end of this one by using [[append]] one-by-one.
+    * Adds the given [[LiftedSplice]] to the end of this one by using [[append]] one-by-one.
     */
-  def appendAll(s: Splice): Splice = {
+  def appendAll(s: LiftedSplice): LiftedSplice = {
     s.parts.foreach(append)
     return this
   }
   /**
-    * Decomposes this [[Splice]] into a sequence of expressions yielding strings,
-    * [[Static]]s are converted into string literals, [[Dynamic]]s into their underlying
+    * Decomposes this [[LiftedSplice]] into a sequence of expressions yielding strings,
+    * [[LiftedStatic]]s are converted into string literals, [[LiftedDynamic]]s into their underlying
     * dynamic expression so it can be inlined.
     */
   def exprs(using Quotes): Seq[Expr[String]] = parts.toList.collect {
-    case Static(str) => Expr(str)
-    case Dynamic(expr) => expr
+    case LiftedStatic(str) => Expr(str)
+    case LiftedDynamic(expr) => expr
   }
   /**
-    * If the last [[Span]] in this [[Splice]] is [[Static]], strip any trailing
+    * If the last [[Span]] in this [[LiftedSplice]] is [[LiftedStatic]], strip any trailing
     * spaces for prettiness.
     */
-  def stripTrailingSpace: Splice = {
+  def stripTrailingSpace: LiftedSplice = {
     parts.lastOption match 
-      case Some(Static(s)) => parts.update(parts.size - 1, Static(s.stripSuffix(" ")))
+      case Some(LiftedStatic(s)) => parts.update(parts.size - 1, LiftedStatic(s.stripSuffix(" ")))
       case _ =>
     return this
   }
   def isEmpty = parts.isEmpty; def nonEmpty = parts.nonEmpty
 }
 
-private[dottytags] object Splice {
+private[dottytags] object LiftedSplice {
   /**
     * Lifts an `Expr[String]` potentially consisting of one or more [[_sticky._splice]]s,
-    * into a [[Splice]].
+    * into a [[LiftedSplice]].
     * @see [[Span.lift]]
     */
-  def lift(s: Expr[String])(using Quotes): Splice = s match {
-    case Expr(s: String) => Splice(Seq(Static(s)))
+  def lift(s: Expr[String])(using Quotes): LiftedSplice = s match {
+    case Expr(s: String) => LiftedSplice(Seq(LiftedStatic(s)))
     case '{ _sticky._splice(${BetterVarargs(parts)}: _*) } => 
-      val ret = Splice(Nil)
+      val ret = LiftedSplice(Nil)
       parts.map(lift).foreach(ret.appendAll)
       ret
     case '{ _sticky._splice($part) } => lift(part)
-    case dyn: Expr[String] => Splice(Seq(Dynamic(dyn)))
+    case dyn: Expr[String] => LiftedSplice(Seq(LiftedDynamic(dyn)))
   }
 }

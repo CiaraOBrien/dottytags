@@ -16,7 +16,7 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 private[dottytags] object _sticky {
   /**
     * At compile-time, acts as a flag that its arguments must be spliced, and is removed if
-    * the splice is seamless (no dynamic chunks leftover, everything can be concatenateed into one big string literal).
+    * the splice is seamless (no dynamic chunks leftover, everything can be concatenated into one big string literal).
     * At runtime, finalizes the splicing process, concatenating the 
     * compile-time-concatenated static chunks with their dynamic neighbors.
     */
@@ -241,16 +241,16 @@ private def tagMacro(cl: Expr[TagClass])(args: Expr[Seq[Entity]])(using Quotes):
   val sname       = cls.name
   val selfClosing = cls.selfClosing
 
-  val attrs  = Splice(List(Static(s"<$sname ")))
-  val styles = Splice(Nil)
-  val body   = Splice(Nil)
+  val attrs  = LiftedSplice(List(LiftedStatic(s"<$sname ")))
+  val styles = LiftedSplice(Nil)
+  val body   = LiftedSplice(Nil)
   
   def iter(as: Seq[Expr[Entity]]): Unit = as.foreach{_ match 
     // Static attr/style/tag/raw string:
-    case '{_sticky._attr($s)}  => attrs .appendAll(Splice.lift(s))
-    case '{_sticky._style($s)} => styles.appendAll(Splice.lift(s))
-    case '{_sticky._tag($s)}   => body  .appendAll(Splice.lift(s))
-    case '{_sticky._raw($s)}   => body  .appendAll(Splice.lift(s))
+    case '{_sticky._attr($s)}  => attrs .appendAll(LiftedSplice.lift(s))
+    case '{_sticky._style($s)} => styles.appendAll(LiftedSplice.lift(s))
+    case '{_sticky._tag($s)}   => body  .appendAll(LiftedSplice.lift(s))
+    case '{_sticky._raw($s)}   => body  .appendAll(LiftedSplice.lift(s))
     // Static frag, can be decomposed:
     case '{_sticky._frag(${BetterVarargs(s)})} => iter(s)
     // Dynamic attr/style/tag/raw string:
@@ -259,22 +259,22 @@ private def tagMacro(cl: Expr[TagClass])(args: Expr[Seq[Entity]])(using Quotes):
     case '{$e: Tag}   => body  .append(Span.lift('{$e.str}))
     case '{$e: Raw}   => body  .append(Span.lift('{$e.str}))
     // Static frag with a dynamic interior, _frag call can be elided by extracting the Expr[Seq[Element]]
-    case '{_sticky._frag(${e: Expr[Seq[Element]]})} => body.append(Dynamic('{_sticky._splice_escaping($e)}))
+    case '{_sticky._frag(${e: Expr[Seq[Element]]})} => body.append(LiftedDynamic('{_sticky._splice_escaping($e)}))
     // Dynamic frag, must be completely spliced (and escaped) at runtime:
-    case '{$e: Frag} => body.append(Dynamic('{_sticky._splice_escaping($e.s)}))
+    case '{$e: Frag} => body.append(LiftedDynamic('{_sticky._splice_escaping($e.s)}))
     // Static or dynamic non-raw string (must be escaped):
     case '{$e: String} => body.append(Span.lift(e) match 
-      case Static(str) => Static(escape(str))
-      case Dynamic(e) => Dynamic('{escape($e)}))
+      case LiftedStatic(str) => LiftedStatic(escape(str))
+      case LiftedDynamic(e) => LiftedDynamic('{escape($e)}))
     // Lol idk
     case e => error("Error, unable to expand expression:\n" + e.show)
   }
 
   BetterVarargs.unapply(args).map { varargs => iter(varargs)
     if styles.isEmpty then attrs.stripTrailingSpace
-                      else styles.stripTrailingSpace.prepend(Static("style=\"")).append(Static("\""))
-    if body.isEmpty   then body.prepend(Static(if selfClosing then "/>" else s"></$sname>"))
-                      else body.prepend(Static(">")).append(Static(s"</$sname>"))
+                      else styles.stripTrailingSpace.prepend(LiftedStatic("style=\"")).append(LiftedStatic("\""))
+    if body.isEmpty   then body.prepend(LiftedStatic(if selfClosing then "/>" else s"></$sname>"))
+                      else body.prepend(LiftedStatic(">")).append(LiftedStatic(s"</$sname>"))
     stick_tag(stick_splice(attrs.appendAll(styles).appendAll(body).exprs: _*))
   }.getOrElse(error("Error, unable to expand varargs:\n" + args.show))
 }
