@@ -9,6 +9,8 @@ import dottytags.predefs.styles._
 
 object Playground:
   def main(args: Array[String]): Unit =
+    val strArr = Array("hello")
+    div(Some("lol"), Some(1), None: Option[String], h1("Hello"), Array(1, 2, 3), strArr, ())
     val numVisitors: Int = 1023
     val posts: Seq[(String, String)] = Seq(
       ("alice", "i like pie"),

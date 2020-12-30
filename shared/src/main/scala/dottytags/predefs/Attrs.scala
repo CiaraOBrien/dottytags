@@ -892,7 +892,7 @@ object attrs {
    *
    * MDN
    */
-  inline def disabled = attr("disabled") := "disabled"
+  inline def disabled = attr("disabled") := "true"
   /**
    * Describes elements which belongs to this one. Used on labels and output
    * elements.

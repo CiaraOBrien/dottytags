@@ -28,7 +28,8 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 	.settings(commonSettings,
 		libraryDependencies += "org.typelevel" %%% "cats-core" % "2.3.1",
 		libraryDependencies += "io.monix" %%% "minitest" % "2.8.2-5ebd81f-SNAPSHOT" % "test",
-		testFrameworks += new TestFramework("minitest.runner.Framework")
+		testFrameworks += new TestFramework("minitest.runner.Framework"),
+		Test / parallelExecution := false
 	)
 	.jvmSettings (
 		libraryDependencies += "com.lihaoyi" % "scalatags_2.13" % "0.9.2" % "test",
