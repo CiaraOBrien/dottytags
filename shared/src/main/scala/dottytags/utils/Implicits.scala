@@ -32,5 +32,4 @@ object implicits {
   given optionToFrag[A](using c: Conversion[A, Element]): Conversion[Option[A], Frag] = (opt: Option[A]) => bind(opt.toList.map(c))
   given seqToFrag   [A](using c: Conversion[A, Element]): Conversion[Seq   [A], Frag] = (seq: Seq   [A]) => bind(seq.map(c))
 
-
 }

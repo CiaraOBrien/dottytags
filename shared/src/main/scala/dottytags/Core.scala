@@ -41,7 +41,6 @@ private[dottytags] object Style {
     */
   def apply (s: String): Style = new Style(s)
 }
-
 /**
   * The true nature of a raw value. If you can see this as the type of an object at runtime, you're probably
   * not using dottytags right, this is sort of like the singularity of a black hole, it's not supposed to be naked.
@@ -137,7 +136,7 @@ type Entity = Modifier | Element
   * At runtime, finalizes the splicing process, concatenating the 
   * compile-time-concatenated static chunks with their dynamic neighbors.
   */
-private def splice(parts: String*): String = {
+private def splice(parts: String*): String = 
   val sb = new StringBuilder()
   var i = 0
   val len = parts.size
@@ -146,13 +145,12 @@ private def splice(parts: String*): String = {
     i = i + 1
   }
   sb.toString
-}
 
 /**
   * Splices a sequence of elements together at runtime while escaping
   * all non-raw strings, for rendering dynamic [[Frag]]s.
   */
-private def spliceEscape(parts: Seq[Element]): String = {
+private def spliceEscape(parts: Seq[Element]): String =
   val sb = new StringBuilder()
   var i = 0
   val len = parts.size
@@ -164,7 +162,6 @@ private def spliceEscape(parts: Seq[Element]): String = {
     i = i + 1
   }
   sb.toString
-}
 
 /** 
   * Shortcut for [[splice]] invocations in macros.
