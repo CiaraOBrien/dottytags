@@ -1,3 +1,6 @@
+val printPhases = settingKey[Seq[String]]("The phases after which to print the tree")
+val playgroundFilter = settingKey[FileFilter]("The files to print")
+
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val commonSettings = Seq (
@@ -6,7 +9,7 @@ lazy val commonSettings = Seq (
 	scalaVersion := "3.0.0-M3",
 	scalacOptions ++= Seq(
 		"-source:3.1", "-indent", "-new-syntax",
-		"-Yexplicit-nulls", "-Ycheck-init", "-language:strictEquality", "-Yindent-colons", 
+		"-Yexplicit-nulls", "-Ycheck-init", "-language:strictEquality", "-Yindent-colons", "-Yerased-terms", 
 	),
 )
 
@@ -17,9 +20,9 @@ lazy val dottytags = project.in(file("."))
 		publishLocal := {},
 		commands += Command.command("play") { state =>
 			"playground / clean" ::
-    	"playground / run"   ::
+    	"playground / run"   :: 
       state
-  	}
+  	},
 	)
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
@@ -41,9 +44,16 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 		jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
 	)
 
+val typerPhase    = "typer"
+val macrosPhase   = "staging"
+val erasurePhase  = "erasure"
+val lastPhase     = "collectSuperCalls"
+val bytecodePhase = "genBCode"
 lazy val playground = project.in(file("playground"))
   .dependsOn(core.jvm)
   .settings(commonSettings,
-    scalacOptions += "-Xprint:staging",
+		printPhases := Seq(macrosPhase),
+		logBuffered := true,
+    scalacOptions ++= Seq("-Xprint:" + printPhases.value.mkString(","))
   )
 
