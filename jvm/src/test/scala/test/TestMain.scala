@@ -55,7 +55,8 @@ object Main {
           calc()
         }
 
-        println(i + " in " + d)
+        println(s"$i trees built in ${d.toFloat / 1000.0} seconds.")
+
 
     //println(calc())
 

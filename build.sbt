@@ -9,19 +9,18 @@ lazy val commonSettings = Seq (
 	scalaVersion := "3.0.0-M3",
 	scalacOptions ++= Seq(
 		"-source:3.1", "-indent", "-new-syntax",
-		"-Yexplicit-nulls", "-Ycheck-init", "-language:strictEquality", "-Yindent-colons", "-Yerased-terms", 
+		"-Yexplicit-nulls", "-Ycheck-init", 
+		"-language:strictEquality", "-Yindent-colons", 
+		"-Yerased-terms", 
 	),
 )
 
 lazy val dottytags = project.in(file("."))
-  .aggregate(core.jvm, core.js)
+  //.aggregate(core.jvm, core.js)
   .settings(
-		publish := {},
-		publishLocal := {},
+		publish := {}, publishLocal := {},
 		commands += Command.command("play") { state =>
-			"playground / clean" ::
-    	"playground / run"   :: 
-      state
+			"playground / clean" :: "playground / run" :: state
   	},
 	)
 

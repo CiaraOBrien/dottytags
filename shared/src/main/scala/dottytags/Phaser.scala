@@ -5,16 +5,16 @@ import scala.compiletime.summonFrom
 
 import cats.Applicative
 
-sealed trait Phased[A : Type : FromExpr : ToExpr](using Quotes) {
+sealed trait Phaser[A : Type : FromExpr : ToExpr](using Quotes) {
   def extract: Expr[A]
 }
 
-object Phased {
+object Phaser {
 
-  final case class Static[A : Type : FromExpr : ToExpr](val a: A)(using Quotes) extends Phased[A] {
+  final case class Static[A : Type : FromExpr : ToExpr](val a: A)(using Quotes) extends Phaser[A] {
     override def extract: Expr[A] = Expr(a)
   }
-  final case class Dynamic[A : Type : FromExpr : ToExpr](val a: Expr[A])(using Quotes) extends Phased[A] {
+  final case class Dynamic[A : Type : FromExpr : ToExpr](val a: Expr[A])(using Quotes) extends Phaser[A] {
     override def extract: Expr[A] = a
     override def toString: String = {
       val show = a.show
@@ -22,11 +22,11 @@ object Phased {
     }
   }
 
-  inline transparent def unlift[A: Type : FromExpr : ToExpr](x: Expr[A])(using Quotes): Phased[A] = x.value match
-    case Some(a) => Phased.Static(a)
-    case _       => Phased.Dynamic(x)
+  inline transparent def unlift[A: Type : FromExpr : ToExpr](x: Expr[A])(using Quotes): Phaser[A] = x.value match
+    case Some(a) => Phaser.Static(a)
+    case _       => Phaser.Dynamic(x)
 
-  def defer[A : Type : FromExpr : ToExpr](x: Expr[A])(using Quotes): Phased[A] = Dynamic(x)
+  def defer[A : Type : FromExpr : ToExpr](x: Expr[A])(using Quotes): Phaser[A] = Dynamic(x)
 
   // This needs a typeclass, PhaseOp, with Option[A => B] and Expr[A] => Expr[B],
   // That is: they may be able to apply the operation to a static value, they can defer the operation into a dynamic expression,
@@ -43,11 +43,11 @@ object Phased {
     //case Phased.Static (a:      Phased[A] ) => a
     //case Phased.Dynamic(a: Expr[Phased[A]]) => error("Something's wrong, epic")
   
-  inline  def phasedTest(str: String): String = ${ phasedTestImpl('str) }
-  private def phasedTestImpl(expr: Expr[String])(using Quotes): Expr[String] = 
+  inline  def phaserTest(str: String): String = ${ phaserTestImpl('str) }
+  private def phaserTestImpl(expr: Expr[String])(using Quotes): Expr[String] = 
     //'{ $expr + ${ Expr( expr.show) } }
-    val phased = Phased.unlift(expr)
-    val phased2 = Phased.defer(expr)
+    val phased = Phaser.unlift(expr)
+    val phased2 = Phaser.defer(expr)
     Expr(phased.toString + "|" + phased2.toString)
 
 }
