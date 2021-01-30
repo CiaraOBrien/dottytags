@@ -14,7 +14,7 @@ import utils._
   * The true nature of an attribute value. If you can see this as the type of an object at runtime, you're probably
   * not using dottytags right, this is sort of like the singularity of a black hole, it's not supposed to be naked. 
   */
-final class Attr  private[dottytags] (val str: String) { 
+final class Attr private[dottytags] (val str: String) { 
   override def toString = str
 }
 private[dottytags] object Attr {
@@ -45,7 +45,7 @@ private[dottytags] object Style {
   * The true nature of a raw value. If you can see this as the type of an object at runtime, you're probably
   * not using dottytags right, this is sort of like the singularity of a black hole, it's not supposed to be naked.
   */
-final class Raw   private[dottytags] (val str: String) { 
+final class Raw private[dottytags] (val str: String) { 
   override def toString = str 
 }
 private[dottytags] object Raw {

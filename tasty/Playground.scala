@@ -7,6 +7,8 @@ import dottytags.predefs.tags._
 import dottytags.predefs.attrs._
 import dottytags.predefs.styles._
 
-object Playground:
-  def main(args: Array[String]): Unit =
-    Phaser.phaserTest("bruh")
+object Playground {
+  def main(args: Array[String]): Unit = {
+  
+  }
+}

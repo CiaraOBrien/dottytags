@@ -11,9 +11,9 @@ import utils._
   * @see [[LiftedStatic]]
   * @see [[LiftedDynamic]]
   */
-private[dottytags] trait Span
+sealed private trait Span
 
-private[dottytags] object Span {
+private object Span {
 
   /**
     * Lifts an `Expr[String]` into a [[Span]], deferring [[splice]]s
@@ -30,12 +30,12 @@ private[dottytags] object Span {
 /**
   * Lifts a statically-known string into the splicing context.
   */
-private[dottytags] case class LiftedStatic(str: String) extends Span
+private case class LiftedStatic(str: String) extends Span
 
 /**
   * Lifts a dynamic string into the splicing context.
   */
-private[dottytags] case class LiftedDynamic(expr: Expr[String]) extends Span
+private case class LiftedDynamic(expr: Expr[String]) extends Span
 
 /**
   * Lifts the operation of concatenating strings by concatenating [[Span]]s as much as possible at compile-time, then is
@@ -43,7 +43,7 @@ private[dottytags] case class LiftedDynamic(expr: Expr[String]) extends Span
   * This whole class is almost definitely an obscene performance bottleneck but it's all at compile-time
   * so lol who cares.
   */
-private[dottytags] class LiftedSplice(seq: Seq[Span]) {
+private class LiftedSplice(seq: Seq[Span]) {
   private var parts = ListBuffer().appendAll(seq)
   /**
     * Appends the given [[Span]] to this [[LiftedSplice]] and returns. If `s` is [[LiftedStatic]]
@@ -96,7 +96,7 @@ private[dottytags] class LiftedSplice(seq: Seq[Span]) {
   def isEmpty = parts.isEmpty; def nonEmpty = parts.nonEmpty
 }
 
-private[dottytags] object LiftedSplice {
+private object LiftedSplice {
   /**
     * Lifts an `Expr[String]` potentially consisting of one or more [[splice]]s,
     * into a [[LiftedSplice]].
