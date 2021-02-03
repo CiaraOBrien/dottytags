@@ -1,7 +1,7 @@
 import minitest._
-import dottytags._
-import dottytags.utils.implicits.given
+import dottytags.utils.syntax.given
 import scala.language.implicitConversions
+import dottytags._
 import dottytags.predefs.tags._
 import dottytags.predefs.attrs._
 import dottytags.predefs.styles._
@@ -97,8 +97,8 @@ object CorrectnessTests extends SimpleTestSuite {
   )}
 
   test("Invalid names fail to compile") {
-    assertDoesNotCompile("""div(attr("[(ngModel)]") := "myModel"""", ".*Not a valid XML attribute name.*")
-    assertDoesNotCompile("""val s: String = "hi"; div(attr(s) := "myModel"""", ".*Attr name must be a string literal.*")
+    assertDoesNotCompile("""div(attr("[(ngModel)]") := "myModel"""", ".*Attr name is not a valid XML attribute name.*")
+    assertDoesNotCompile("""val s: String = "hi"; div(attr(s) := "myModel"""", ".*Attr name must be static.*")
   }
 
   test("Repeating Attributes Causes them to be Combined") {

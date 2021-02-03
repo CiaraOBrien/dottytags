@@ -7,7 +7,7 @@ import collection.IterableOnce.iterableOnceExtensionMethods
 
 import dottytags._
 
-object implicits {
+object syntax {
 
   given elemToElem: Conversion[Element, Element] = (e: Element) => e
   //given implicitFrag: Conversion[Seq[Element], Frag] = frag(_)

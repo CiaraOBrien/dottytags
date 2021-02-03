@@ -1,4 +1,5 @@
 ThisBuild / bintrayReleaseOnPublish := false
+ThisBuild / publishMavenStyle := true
 
 lazy val root = project.in(file("."))
 .aggregate(dottytags.jvm)
@@ -15,7 +16,7 @@ lazy val cross = root.aggregate(dottytags.jvm, dottytags.js)
 lazy val dottytags = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("."))
 .settings(  
   name                 := "dottytags",
-  version              := "0.2.0",
+  version              := "0.3.0",
   scalaVersion         := "3.0.0-M3",
   organization         := "edu.yale.cafferty",
   organizationName     := "Cafferty Lab",
@@ -30,13 +31,19 @@ lazy val dottytags = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.P
   homepage             := Some(url("https://github.com/CiaraOBrien/dottytags")),
   publishMavenStyle    := true,
   libraryDependencies ++= Seq(
-     "org.typelevel" %%% "cats-core" % "2.3.1",
-     "io.monix"      %%% "minitest"  % "2.9.2" % "test",
-    ("com.lihaoyi"   %%% "scalatags" % "0.9.2" % "test").withDottyCompat(scalaVersion.value),
+     "org.typelevel"     %%% "cats-core" % "2.3.1",
+     "edu.yale.cafferty" %%% "phaser"    % "0.2.1",
+     "io.monix"          %%% "minitest"  % "2.9.2" % "test",
+    ("com.lihaoyi"       %%% "scalatags" % "0.9.2" % "test").withDottyCompat(scalaVersion.value),
   ),
   testFrameworks    += new TestFramework("minitest.runner.Framework"),
   parallelExecution := false,
   crossTarget       := file("target"),
+  scalacOptions    ++= Seq(
+    "-source:3.1", "-indent", "-new-syntax",
+    "-Yexplicit-nulls", "-Ycheck-init", "-Yerased-terms",
+    "-language:strictEquality", 
+  )
 ).jvmSettings(
 
 ).jsSettings(
