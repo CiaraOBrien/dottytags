@@ -14,15 +14,12 @@ lazy val root = project.in(file("."))
 lazy val cross = root.aggregate(dottytags.jvm, dottytags.js)
 
 lazy val dottytags = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("."))
-.settings(  
+.settings(
   name                 := "dottytags",
-  version              := "0.3.0",
-  scalaVersion         := "3.0.0-M3",
-  organization         := "edu.yale.cafferty",
-  organizationName     := "Cafferty Lab",
-  organizationHomepage := Some(url("https://www.caffertylab.org/")),
+  version              := "0.4.0",
+  scalaVersion         := "3.0.0",
   developers           := List(
-    Developer(id = "CiaraOBrien", name = "Ciara O'Brien", 
+    Developer(id = "CiaraOBrien", name = "Ciara O'Brien",
               email = "ciaraobrienf@gmail.com", url = url("https://github.com/CiaraOBrien")),
   ),
   startYear            := Some(2021),
@@ -31,18 +28,13 @@ lazy val dottytags = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.P
   homepage             := Some(url("https://github.com/CiaraOBrien/dottytags")),
   publishMavenStyle    := true,
   libraryDependencies ++= Seq(
-     "org.typelevel"     %%% "cats-core" % "2.3.1",
-     "edu.yale.cafferty" %%% "phaser"    % "0.2.1",
-     "io.monix"          %%% "minitest"  % "2.9.2" % "test",
-    ("com.lihaoyi"       %%% "scalatags" % "0.9.2" % "test").withDottyCompat(scalaVersion.value),
+     "io.monix"       %%% "minitest" % "2.9.6" % "test",
   ),
   testFrameworks    += new TestFramework("minitest.runner.Framework"),
   parallelExecution := false,
   crossTarget       := file("target"),
   scalacOptions    ++= Seq(
-    "-source:3.1", "-indent", "-new-syntax",
-    "-Yexplicit-nulls", "-Ycheck-init", "-Yerased-terms",
-    "-language:strictEquality", 
+    "-Yexplicit-nulls", "-language:strictEquality",
   )
 ).jvmSettings(
 
@@ -59,11 +51,13 @@ val bytecodePhase = "genBCode"
 val printPhases   = Seq(macrosPhase, bytecodePhase)
 val taste         = taskKey[Unit]("Clean and run \"tasty\"")
 
+// Anything in this project can depend on the full Dottytags, and gets compiled and
+// its intermediate AST phases printed by the compiler for debugging and general development assistance.
 lazy val tasty = project.in(file("tasty"))
 .dependsOn(dottytags.jvm)
 .settings(
   name := "tasty-playground",
-  scalaVersion := "3.0.0-M3",
+  scalaVersion := "3.0.0",
   Compile / scalaSource      := (ThisBuild / baseDirectory).value / "tasty",
   Test    / unmanagedSources := Nil,
   Compile / logBuffered      := true,

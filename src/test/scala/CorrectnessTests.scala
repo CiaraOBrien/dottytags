@@ -1,14 +1,20 @@
-import minitest._
-import dottytags.utils.syntax.given
+import minitest.*
+import dottytags.*
+import dottytags.utils.implicits.given
 import scala.language.implicitConversions
-import dottytags._
-import dottytags.predefs.tags._
-import dottytags.predefs.attrs._
-import dottytags.predefs.styles._
+import dottytags.predefs.tags.*
+import dottytags.predefs.attrs.*
+import dottytags.predefs.styles.*
 
 import scala.language.implicitConversions
+
+/*
+ * Most of these were adapted from Scalatags' test suite so as to correctly test for compatibility,
+ * and also for incompatibility, as not all of them pass. (see LICENSE for copyright notice)
+ */
 
 object CorrectnessTests extends SimpleTestSuite {
+
 
   test("Basic Tree Building") {
     val x = script("")
@@ -97,8 +103,8 @@ object CorrectnessTests extends SimpleTestSuite {
   )}
 
   test("Invalid names fail to compile") {
-    assertDoesNotCompile("""div(attr("[(ngModel)]") := "myModel"""", ".*Attr name is not a valid XML attribute name.*")
-    assertDoesNotCompile("""val s: String = "hi"; div(attr(s) := "myModel"""", ".*Attr name must be static.*")
+    assertDoesNotCompile("""div(attr("[(ngModel)]") := "myModel"""")
+    assertDoesNotCompile("""val s: String = "hi"; div(attr(s) := "myModel"""")
   }
 
   test("Repeating Attributes Causes them to be Combined") {

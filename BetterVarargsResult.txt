@@ -1,3 +1,8 @@
+BetterVarargs is an extractor I made improving upon the existing Varargs extractor in the Dotty metaprogramming API. I
+subsequently committed it and it's been in since one of the release candidates, but I've not gotten around to replacing
+it out of paranoia that it will somehow cause a perf regression even though I can literally see the difference in
+the intermediate output from the compiler.
+
 With BetterVarargs:
 
 [info]         val numVisitors: Int = 1023

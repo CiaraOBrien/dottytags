@@ -1,11 +1,16 @@
-import minitest._
-import dottytags._
-import dottytags.utils.syntax.given
-import dottytags.utils.cssUnits._
+import minitest.*
+import dottytags.*
+import dottytags.utils.implicits.given
+import dottytags.utils.cssUnits.*
 import scala.language.implicitConversions
-import dottytags.predefs.tags._
-import dottytags.predefs.attrs._
-import dottytags.predefs.styles._
+import dottytags.predefs.tags.*
+import dottytags.predefs.attrs.*
+import dottytags.predefs.styles.*
+
+/*
+ * Most of these were adapted from Scalatags' test suite so as to correctly test for compatibility.
+ * (see LICENSE for copyright notice)
+ */
 
 object ExampleTests extends SimpleTestSuite {
 
