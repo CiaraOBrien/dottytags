@@ -1,6 +1,6 @@
 import minitest.*
 import dottytags.*
-import dottytags.utils.implicits.given
+import dottytags.utils.syntax.given
 import scala.language.implicitConversions
 import dottytags.predefs.tags.*
 import dottytags.predefs.attrs.*
