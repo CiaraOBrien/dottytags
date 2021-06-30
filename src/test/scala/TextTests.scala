@@ -1,10 +1,15 @@
-import minitest._
-import dottytags._
+import minitest.*
+import dottytags.*
 import dottytags.utils.implicits.given
 import scala.language.implicitConversions
-import dottytags.predefs.tags._
-import dottytags.predefs.attrs._
-import dottytags.predefs.styles._
+import dottytags.predefs.tags.*
+import dottytags.predefs.attrs.*
+import dottytags.predefs.styles.*
+
+/*
+ * Most of these were adapted from Scalatags' test suite so as to correctly test for compatibility.
+ * (see LICENSE for copyright notice)
+ */
 
 object TextTests extends SimpleTestSuite {
 
@@ -24,7 +29,7 @@ object TextTests extends SimpleTestSuite {
     }
 
     test("CSS Helpers"){
-      import dottytags.utils.cssUnits._
+      import dottytags.utils.cssUnits.*
       assert(10.px == "10px")
       assert(10.0.px == "10.0px" || 10.0.px == "10px")
       assert(10.em == "10em")

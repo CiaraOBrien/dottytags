@@ -1,8 +1,11 @@
 import minitest.api.{SourceLocation, AssertionException}
-import minitest.api.Asserts._
-import Console._
+import minitest.api.Asserts.*
+import Console.*
 
-def flatten(s: String): String = s.replaceAll("(\\n|\\s)+<", "<").trim.nn
+/*
+ * Flatten was adapted from Scalatags.
+ */
+def flatten(s: String): String = s.replaceAll("(\\n|\\s)+<", "<").nn.trim.nn
 
 extension (s: String) def takePadding(n: Int, sep: String = ""): String = 
   val take = s.take(n)

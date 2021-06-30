@@ -1,12 +1,12 @@
 package dottytags
 
-import scala.quoted._
+import scala.quoted.*
 import scala.annotation.targetName
 import scala.unchecked
 import scala.language.implicitConversions
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
-import utils._
+import utils.*
 
 // === Basic Datatypes === //
 
@@ -169,7 +169,7 @@ private def spliceEscape(parts: Seq[Element]): String =
   */
 private def spliced(parts: Expr[String]*) (using Quotes): Expr[String] =  parts match 
                     case    Seq(head: Expr[String]) => head
-                    case s: Seq[Expr[String]]       => '{ splice(${BetterVarargs(s)}: _*) }
+                    case s: Seq[Expr[String]]       => '{ splice(${BetterVarargs(s)} *) }
 
 /**
   * Actually renders a dynamic [[Entity]] to a [[String]] at runtime, without getting inlined.
@@ -181,7 +181,7 @@ private def renderOutOfLine(e: Entity): String = e match
   case s: Style  => s.str
   case r: Raw    => r.str
   case t: Tag    => t.str
-  case f: Frag   => splice(f.s.map(renderOutOfLine): _*)
+  case f: Frag   => splice(f.s.map(renderOutOfLine) *)
   case s: String => s
 
 /** Runtime implementation of [[pxifyDynamic]] */
@@ -201,7 +201,7 @@ extension (inline e: Entity) inline def render: String = inline e match
   case s: Style  => s.str
   case r: Raw    => r.str
   case t: Tag    => t.str
-  case f: Frag   => splice(f.s.map(renderOutOfLine): _*)
+  case f: Frag   => splice(f.s.map(renderOutOfLine) *)
   case s: String => s
   case _         => renderOutOfLine(e)
 
@@ -211,7 +211,7 @@ extension (inline e: Entity) inline def render: String = inline e match
   * @throws [[scala.quoted.runtime.StopMacroExpansion]] always
   */
 private[dottytags] def error(error: String)(using Quotes): Nothing = {
-  import quotes.reflect._
+  import quotes.reflect.*
   report.error(error)
   throw scala.quoted.runtime.StopMacroExpansion()
 }
@@ -251,7 +251,7 @@ private[dottytags] def error(error: String)(using Quotes): Nothing = {
   */
 extension (inline cl: TagClass) inline def apply(inline args: Entity*): Tag = ${ tagMacro('cl)('args) }
 private def tagMacro(cl: Expr[TagClass])(args: Expr[Seq[Entity]])(using Quotes): Expr[Tag] = {
-  import quotes.reflect._
+  import quotes.reflect.*
   val cls = cl.value.getOrElse(error("Tag class must be static."))
   val sname       = cls.name
   val selfClosing = cls.selfClosing
@@ -290,7 +290,7 @@ private def tagMacro(cl: Expr[TagClass])(args: Expr[Seq[Entity]])(using Quotes):
                       else styles.stripTrailingSpace.prepend(LiftedStatic("style=\"")).append(LiftedStatic("\""))
     if body.isEmpty   then body.prepend(LiftedStatic(if selfClosing then " />" else s"></$sname>"))
                       else body.prepend(LiftedStatic(">")).append(LiftedStatic(s"</$sname>"))
-    '{Tag(${spliced(attrs.appendAll(styles).appendAll(body).exprs: _*)})}
+    '{Tag(${spliced(attrs.appendAll(styles).appendAll(body).exprs *)})}
   }.getOrElse(error("Error, unable to traverse varargs:\n" + args.show))
 }
 
@@ -314,7 +314,7 @@ class TagClass (val name: String, val selfClosing: Boolean) {
   */
 inline def tag(inline name: String): TagClass = ${ tagValidateMacro('name) }
 private def tagValidateMacro(name: Expr[String])(using Quotes): Expr[TagClass] = {
-  import quotes.reflect._
+  import quotes.reflect.*
   val sname = name.value.getOrElse(error("Tag name must be a string literal."))
   if !isValidTagName(sname) then error(s"Not a valid XML tag name: $name.")
   '{new TagClass(${Expr(sname)}, ${Expr(false)})}
@@ -327,7 +327,7 @@ private def tagValidateMacro(name: Expr[String])(using Quotes): Expr[TagClass] =
   */
 inline def tag(inline name: String, inline sc: Boolean): TagClass = ${ tagValidateMacroSC('name, 'sc) }
 private def tagValidateMacroSC(name: Expr[String], sc: Expr[Boolean])(using Quotes): Expr[TagClass] = {
-  import quotes.reflect._
+  import quotes.reflect.*
   val sname = name.value.getOrElse(error("Tag name must be a string literal."))
   if !isValidTagName(sname) then error(s"Not a valid XML tag name: $name.")
   val scs  = sc.value.getOrElse(error("Self-closing flag must be a literal."))
@@ -396,7 +396,7 @@ final class AttrClass (val name: String, val raw: Boolean) {
 inline def attr(inline name: String): AttrClass = ${ attrValidateMacro('name, 'false) }
 inline def attrRaw(inline name: String): AttrClass = ${ attrValidateMacro('name, 'true) }
 private def attrValidateMacro(name: Expr[String], raw: Expr[Boolean])(using Quotes): Expr[AttrClass] =
-  import quotes.reflect._
+  import quotes.reflect.*
   val sname = name.value.getOrElse(error("Attr name must be a string literal."))
   val sraw =    raw.value.getOrElse(error("Raw flag must be a boolean literal"))
   if !isValidAttrName(sname) && !sraw then error(s"Not a valid XML attribute name: $name.")
@@ -453,7 +453,7 @@ inline def css(inline name: String): StyleClass = ${ cssValidateMacro('name, '{f
   */
 inline def cssPx(inline name: String): StyleClass = ${ cssValidateMacro('name, '{true}) }
 private def cssValidateMacro(name: Expr[String], px: Expr[Boolean])(using Quotes): Expr[StyleClass] = {
-  import quotes.reflect._
+  import quotes.reflect.*
   val sname = name.value.getOrElse(error("Style name must be a string literal."))
   val spx   = px.value.getOrElse(error("Pixel style must be a boolean literal."))
 
@@ -488,7 +488,7 @@ given StyleClassFromExpr: FromExpr[StyleClass] with {
 
 inline def showCode(inline a: Any): Unit = ${ showCodeMacro('a) }
 private def showCodeMacro(a: Expr[Any])(using Quotes): Expr[Unit] = {
-  import quotes.reflect._
+  import quotes.reflect.*
   '{
     println(s"Code for ${${Expr(Position.ofMacroExpansion.startLine.toString)}}:")
     println(${Expr(Printer.TreeAnsiCode.show(a.asTerm))})
@@ -498,7 +498,7 @@ private def showCodeMacro(a: Expr[Any])(using Quotes): Expr[Unit] = {
 
 inline def showTree(inline a: Any): Unit = ${ showTreeMacro('a) }
 private def showTreeMacro(a: Expr[Any])(using Quotes): Expr[Unit] = {
-  import quotes.reflect._
+  import quotes.reflect.*
   '{
     println(s"Tree for ${${Expr(Position.ofMacroExpansion.startLine.toString)}}:")
     println(${Expr(Printer.TreeStructure.show(a.asTerm))})
