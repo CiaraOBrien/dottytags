@@ -1,4 +1,6 @@
 # DottyTags
+[![dottytags Scala version support](https://index.scala-lang.org/ciaraobrien/dottytags/dottytags/latest-by-scala-version.svg)](https://index.scala-lang.org/ciaraobrien/dottytags/dottytags)
+
 Finally released on Maven Central!
 ```scala
 libraryDependencies += "io.github.ciaraobrien" %% "dottytags" % "1.0.0"
