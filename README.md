@@ -6,7 +6,7 @@ Finally released on Maven Central!
 libraryDependencies += "io.github.ciaraobrien" %% "dottytags" % "1.0.0"
 ```
 
-An experimental reimplementation of [ScalaTags](http://www.lihaoyi.com/scalatags/) in (extremely meta) Scala 3. It is a more-or-less working clone of
+An experimental reimplementation of [ScalaTags](https://com-lihaoyi.github.io/scalatags/) in (extremely meta) Scala 3. It is a more-or-less working clone of
 ScalaTags from the user's perspective, with most of the surface syntax being nearly identical, but the internals are radically different, as Scala 3's 
 metaprogramming capabilities are leveraged to automatically reduce the tree as much as possible to simple serial concatenation of strings at compile-time. 
 Therefore, the code that actually runs is, in many cases, basially an array of string literals interspersed with string expressions that are evaluated at runtime 
