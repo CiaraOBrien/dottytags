@@ -1,11 +1,11 @@
-import minitest.*
+package scala
+
 import dottytags.*
-import dottytags.utils.syntax.given
-import dottytags.utils.cssUnits.*
+import dottytags.predefs.all.*
+import dottytags.syntax.given
+import dottytags.units.*
 import scala.language.implicitConversions
-import dottytags.predefs.tags.*
-import dottytags.predefs.attrs.*
-import dottytags.predefs.styles.*
+import minitest.*
 
 /*
  * Most of these were adapted from Scalatags' test suite so as to correctly test for compatibility.
@@ -141,10 +141,10 @@ object ExampleTests extends SimpleTestSuite {
         body(
           h1("This is my title"),
           div("posts"),
-          for ((name, text) <- posts) yield div(
+          bind(for ((name, text) <- posts) yield div(
             h2("Post by ", name),
             p(text)
-          ),
+          )),
           if numVisitors > 100 then p("No more posts!")
           else p("Please post below...")
         )
@@ -178,7 +178,7 @@ object ExampleTests extends SimpleTestSuite {
   )}
 
   test("Functions") { assertXMLEquiv ( {
-      def imgBox(source: String, text: String) = div(
+      inline def imgBox(inline source: String, inline text: String) = div(
         img(src:=source),
         div(
           p(text)
@@ -275,7 +275,7 @@ object ExampleTests extends SimpleTestSuite {
         body(
           h1(style:="background-color: blue; color: red;", "This is my title"),
           div(style:="background-color: blue; color: red;",
-            p(`class`:="contentpara first", 
+            p(`class`:="contentpara first",
               "This is my first paragraph"
             ),
             a(style:="opacity: 0.9;",
@@ -312,6 +312,7 @@ object ExampleTests extends SimpleTestSuite {
         a(tabindex:=10,
           p("Goooogle")
         ),
+
         input(attr("disabled"):=true)
       )
       ,
@@ -339,7 +340,7 @@ object ExampleTests extends SimpleTestSuite {
             h1("This is my title"),
             div(cls := "content", content)
           )
-        ).render
+        ).toString
 
       page(
         Seq(

@@ -1,10 +1,12 @@
-import minitest.*
+package scala
+
 import dottytags.*
-import dottytags.utils.syntax.given
+import dottytags.predefs.all.*
+import dottytags.syntax.given
+import dottytags.units.*
 import scala.language.implicitConversions
-import dottytags.predefs.tags.*
-import dottytags.predefs.attrs.*
-import dottytags.predefs.styles.*
+import minitest.*
+
 
 /*
  * Most of these were adapted from Scalatags' test suite so as to correctly test for compatibility.
@@ -22,14 +24,13 @@ object TextTests extends SimpleTestSuite {
      * the tags on the fly from Strings
      */
     test("Tag creation") {
-      assertXMLEquiv(a.render, "<a></a>")
-      assertXMLEquiv(html.render, "<html></html>")
-      assertXMLEquiv(tag("this_is_an_unusual_tag").render, "<this_is_an_unusual_tag></this_is_an_unusual_tag>")
-      assertXMLEquiv(tag("this-is-a-string-with-dashes", sc = true).render, "<this-is-a-string-with-dashes />")
+      assertXMLEquiv(a().toString, "<a></a>")
+      assertXMLEquiv(html().toString, "<html></html>")
+      assertXMLEquiv(tag("this_is_an_unusual_tag").toString, "<this_is_an_unusual_tag></this_is_an_unusual_tag>")
+      assertXMLEquiv(tag("this-is-a-string-with-dashes", selfClosing = true).toString, "<this-is-a-string-with-dashes />")
     }
 
     test("CSS Helpers"){
-      import dottytags.utils.cssUnits.*
       assert(10.px == "10px")
       assert(10.0.px == "10.0px" || 10.0.px == "10px")
       assert(10.em == "10em")

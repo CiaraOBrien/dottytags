@@ -1,9 +1,9 @@
 package dottytags.predefs
 
-import dottytags._
+import dottytags.*
 
 /*
- * This whole file is, of course, adapted from scalatags (see LICENSE for copyright notice):
+ * This whole file is, of course, adapted from Scalatags (see LICENSE for copyright notice):
  * https://github.com/lihaoyi/scalatags/blob/master/scalatags/src/scalatags/generic/Tags.scala
  * https://github.com/lihaoyi/scalatags/blob/master/scalatags/src/scalatags/generic/Tags2.scala
  */
@@ -13,9 +13,9 @@ object tags {
   inline def html       = tag("html")
   // Document Metadata
   inline def head       = tag("head")
-  inline def base       = tag("base", sc = true)
-  inline def link       = tag("link", sc = true)
-  inline def meta       = tag("meta", sc = true)
+  inline def base       = tag("base", selfClosing = true)
+  inline def link       = tag("link", selfClosing = true)
+  inline def meta       = tag("meta", selfClosing = true)
   // Scripting
   inline def script     = tag("script")
   // Sections
@@ -30,7 +30,7 @@ object tags {
   inline def footer     = tag("footer")
   // Grouping content
   inline def p          = tag("p")
-  inline def hr         = tag("hr", sc = true)
+  inline def hr         = tag("hr", selfClosing = true)
   inline def pre        = tag("pre")
   inline def blockquote = tag("blockquote")
   inline def ol         = tag("ol")
@@ -56,29 +56,29 @@ object tags {
   inline def b          = tag("b")
   inline def u          = tag("u")
   inline def span       = tag("span")
-  inline def br         = tag("br", sc = true)
-  inline def wbr        = tag("wbr", sc = true)
+  inline def br         = tag("br", selfClosing = true)
+  inline def wbr        = tag("wbr", selfClosing = true)
   // Edits
   inline def ins        = tag("ins")
   inline def del        = tag("del")
   // Embedded content
-  inline def img        = tag("img", sc = true)
+  inline def img        = tag("img", selfClosing = true)
   inline def iframe     = tag("iframe")
-  inline def embed      = tag("embed", sc = true)
+  inline def embed      = tag("embed", selfClosing = true)
   inline def `object`   = tag("object")
-  inline def param      = tag("param", sc = true)
+  inline def param      = tag("param", selfClosing = true)
   inline def video      = tag("video")
   inline def audio      = tag("audio")
-  inline def source     = tag("source", sc = true)
-  inline def track      = tag("track", sc = true)
+  inline def source     = tag("source", selfClosing = true)
+  inline def track      = tag("track", selfClosing = true)
   inline def canvas     = tag("canvas")
   inline def map        = tag("map")
-  inline def area       = tag("area", sc = true)
+  inline def area       = tag("area", selfClosing = true)
   // Tabular data
   inline def table      = tag("table")
   inline def caption    = tag("caption")
   inline def colgroup   = tag("colgroup")
-  inline def col        = tag("col", sc = true)
+  inline def col        = tag("col", selfClosing = true)
   inline def tbody      = tag("tbody")
   inline def thead      = tag("thead")
   inline def tfoot      = tag("tfoot")
@@ -90,7 +90,7 @@ object tags {
   inline def fieldset   = tag("fieldset")
   inline def legend     = tag("legend")
   inline def label      = tag("label")
-  inline def input      = tag("input", sc = true)
+  inline def input      = tag("input", selfClosing = true)
   inline def button     = tag("button")
   inline def select     = tag("select")
   inline def datalist   = tag("datalist")
@@ -133,13 +133,13 @@ object miscTags {
   inline def bdi        = tag("bdi")
   inline def bdo        = tag("bdo")
   // Forms
-  inline def keygen     = tag("keygen", sc = true)
+  inline def keygen     = tag("keygen", selfClosing = true)
   inline def output     = tag("output")
   inline def progress   = tag("progress")
   inline def meter      = tag("meter")
   // Interactive elements
   inline def details    = tag("details")
   inline def summary    = tag("summary")
-  inline def command    = tag("command", sc = true)
+  inline def command    = tag("command", selfClosing = true)
   inline def menu       = tag("menu")
 }

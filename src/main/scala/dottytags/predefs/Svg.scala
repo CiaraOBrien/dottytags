@@ -2,7 +2,7 @@ package dottytags.predefs
 
 import scala.annotation.targetName
 
-import dottytags._
+import dottytags.*
 
 /*
  * Documentation marked "MDN" is thanks to Mozilla Contributors
@@ -13,7 +13,7 @@ import dottytags._
  * Everything else is under the MIT License, see here:
  * https://github.com/CiaraOBrien/dottytags/blob/main/LICENSE
  * 
- * This whole file is, of course, adapted from scalatags (see LICENSE for copyright notice):
+ * This whole file is, of course, adapted from Scalatags (see LICENSE for copyright notice):
  * https://github.com/lihaoyi/scalatags/blob/master/scalatags/src/scalatags/generic/SvgTags.scala
  * https://github.com/lihaoyi/scalatags/blob/master/scalatags/src/scalatags/generic/SvgAttrs.scala
  */

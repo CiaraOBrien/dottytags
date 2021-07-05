@@ -1,114 +1,64 @@
 package dottytags
 
-import scala.quoted._
 import scala.collection.mutable.ListBuffer
+import scala.quoted.*
 
-import utils._
-
-/**
-  * Lifts strings into the the splicing operation, as [[LiftedSplice]] lifts
-  * the operation itself.
-  * @see [[LiftedStatic]]
-  * @see [[LiftedDynamic]]
-  */
-sealed private trait Span
-
-private object Span {
-
-  /**
-    * Lifts an `Expr[String]` into a [[Span]], deferring [[splice]]s
-    * until runtime. As such, it should primarily be used in cases where it is known
-    * that there won't be any nested [[splice]]s.
-    * @see [[Splice.lift]]
-    */
-  def lift(s: Expr[String])(using Quotes): Span = s match 
-    case Expr(s: String)   => LiftedStatic(s)
-    case dyn: Expr[String] => LiftedDynamic(dyn)
-
-}
-
-/**
-  * Lifts a statically-known string into the splicing context.
-  */
-private case class LiftedStatic(str: String) extends Span
-
-/**
-  * Lifts a dynamic string into the splicing context.
-  */
-private case class LiftedDynamic(expr: Expr[String]) extends Span
-
-/**
-  * Lifts the operation of concatenating strings by concatenating [[Span]]s as much as possible at compile-time, then is
-  * decomposed into a [[scala.collections.Seq]] of [[scala.quoted.Expr]]s and inlined at the render site.
-  * This whole class is almost definitely an obscene performance bottleneck but it's all at compile-time
-  * so lol who cares.
-  */
-private class LiftedSplice(seq: Seq[Span]) {
-  private var parts = ListBuffer().appendAll(seq)
-  /**
-    * Appends the given [[Span]] to this [[LiftedSplice]] and returns. If `s` is [[LiftedStatic]]
-    * then it may be concatenated with the previous [[Span]] if it is also [[LiftedStatic]].
-    */
-  def append(s: Span): LiftedSplice = { s match
-    case LiftedStatic(s)  => parts.lastOption match 
-      case Some(LiftedStatic(s1)) => parts.update(parts.size - 1, LiftedStatic(s1 + s))
-      case _                      => parts.append(LiftedStatic(s))
-    case d: LiftedDynamic => parts.append(d)
-    return this
+object Splice {
+  def phaseSplice[A](spans: Phaser[A]*)(using q: Quotes, s: Spliceable[A], te: ToExpr[A], fe: FromExpr[A]): Phaser[A] = {
+    // Attempt to extract prior splices from spans based on their expressions containing spliceString method calls
+    val expanded = spans.flatMap(span => span match {
+      case tp @ Phaser.ThisPhase(_: A) => Seq(tp)
+      case      Phaser.NextPhase(expr: Expr[A]) => s.disensplice(expr).map(e => Phaser.NextPhase(e).pull)
+    })
+    // This is all pretty unidiomatic sadly, might go back over it at some point
+    var condensed: List[Phaser[A]] = List()
+    val iter = expanded.iterator
+    while iter.hasNext do {
+      iter.next match {
+        case phase1 @ Phaser.ThisPhase(value1: A) => condensed.headOption match
+          case Some(Phaser.ThisPhase(value2: A)) => condensed = Phaser.ThisPhase(s.spliceStatic(value2, value1)) :: condensed.tail
+          case _ => condensed = phase1 :: condensed
+        case phase1 @ Phaser.NextPhase(expr1: Expr[A]) => condensed = phase1 :: condensed
+      }
+    }
+    if condensed.exists(_.isDeferred) then Phaser.NextPhase(s.ensplice(condensed.map(_.expr).reverse))
+                                      else condensed.headOption.getOrElse(Phaser.ThisPhase(s.identity))
   }
-  /**
-    * Prepends the given [[Span]] to this [[LiftedSplice]] and returns. If `s` is [[LiftedStatic]]
-    * then it may be concatenated (prepending) with the previous [[Span]] if it is also [[LiftedStatic]].
-    */
-  def prepend(s: Span): LiftedSplice = { s match 
-    case LiftedStatic(s)  => parts.headOption match 
-      case Some(LiftedStatic(s1)) => parts.update(0, LiftedStatic(s + s1))
-      case _                      => parts.prepend(LiftedStatic(s))
-    case d: LiftedDynamic => parts.prepend(d)
-    return this
-  }
-  /**
-    * Adds the given [[LiftedSplice]] to the end of this one by using [[append]] one-by-one.
-    */
-  def appendAll(s: LiftedSplice): LiftedSplice = {
-    s.parts.foreach(append)
-    return this
-  }
-  /**
-    * Decomposes this [[LiftedSplice]] into a sequence of expressions yielding strings,
-    * [[LiftedStatic]]s are converted into string literals, [[LiftedDynamic]]s into their underlying
-    * dynamic expression so it can be inlined.
-    */
-  def exprs(using Quotes): Seq[Expr[String]] = parts.toList.collect {
-    case LiftedStatic(str) => Expr(str)
-    case LiftedDynamic(expr) => expr
-  }
-  /**
-    * If the last [[Span]] in this [[LiftedSplice]] is [[LiftedStatic]], strip any trailing
-    * spaces for prettiness.
-    */
-  def stripTrailingSpace: LiftedSplice = {
-    parts.lastOption match 
-      case Some(LiftedStatic(s)) => parts.update(parts.size - 1, LiftedStatic(s.stripSuffix(" ")))
-      case otherwise => { }
-    return this
-  }
-  def isEmpty = parts.isEmpty; def nonEmpty = parts.nonEmpty
-}
-
-private object LiftedSplice {
-  /**
-    * Lifts an `Expr[String]` potentially consisting of one or more [[splice]]s,
-    * into a [[LiftedSplice]].
-    * @see [[Span.lift]]
-    */
-  def lift(s: Expr[String])(using Quotes): LiftedSplice = s match {
-    case Expr(s: String) => LiftedSplice(Seq(LiftedStatic(s)))
-    case '{ splice(${BetterVarargs(parts)}: _*) } => // This sort of thing is why BetterVarargs exists
-      val ret = LiftedSplice(Nil)
-      parts.map(lift).foreach(ret.appendAll)
-      ret
-    case '{ splice($part) } => lift(part)
-    case dyn: Expr[String] => LiftedSplice(Seq(LiftedDynamic(dyn)))
+  def phaseDisensplice[A](splice: Phaser[A])(using q: Quotes, s: Spliceable[A], fe: FromExpr[A]): Seq[Phaser[A]] = splice match {
+    case tp @ Phaser.ThisPhase(_: A) => Seq(tp)
+    case Phaser.NextPhase(expr: Expr[A]) => s.disensplice(expr).map(e => Phaser.NextPhase(e).pull)
   }
 }
+
+trait Spliceable[A] {
+    def identity: A
+    def spliceStatic(a1: A, a2: A): A
+    def ensplice(spans: Seq[Expr[A]])(using Quotes): Expr[A]
+    def disensplice(splice: Expr[A])(using Quotes): Seq[Expr[A]]
+}
+
+given StringSpliceable: Spliceable[String] with
+    override def identity: String = ""
+    override def spliceStatic(a1: String, a2: String): String = a1 + a2
+    // Via ensplice and disensplice, spliceString acts not only as the ultimate executor of the splicing process,
+    // using a StringBuilder, but it also acts to carry information about the splicing process along the way,
+    // since it encodes all the spans it's meant to splice in its varargs, and this can be used to transmit finer-grained
+    // splicing information to enclosing macro invocations, whereas normally they'd just be stuck with whatever string
+    // expression came out of their sub-invocations (child macros).
+    override def ensplice(spans: Seq[Expr[String]])(using Quotes): Expr[String] = '{ spliceString(${Varargs(spans)}: _*) }
+    override def disensplice(splice: Expr[String])(using Quotes): Seq[Expr[String]] = splice match {
+        case '{spliceString(${Varargs(spans)}: _*)} => spans
+        case _ => Seq(splice)
+    }
+
+def spliceString(as: String*): String = {
+    val sb = new StringBuilder()
+    var i = 0
+    val len = as.size
+    while i < len do {
+        sb.append(as(i))
+        i = i + 1
+    }
+    sb.toString
+}
+

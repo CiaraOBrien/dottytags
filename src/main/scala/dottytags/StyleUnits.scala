@@ -1,4 +1,6 @@
-package dottytags.utils
+package dottytags
+
+import scala.quoted.*
 
 /*
  * Documentation marked "MDN" is thanks to Mozilla Contributors
@@ -8,18 +10,22 @@ package dottytags.utils
  *
  * Everything else is under the MIT License, see here:
  * https://github.com/CiaraOBrien/dottytags/blob/main/LICENSE
- * 
- * This whole file is, of course, adapted from scalatags (see LICENSE for copyright notice):
+ *
+ * This whole file is, of course, adapted from Scalatags (see LICENSE for copyright notice):
  * https://github.com/lihaoyi/scalatags/blob/master/scalatags/src/scalatags/DataTypes.scala
  */
 
-/**
-  * Extends numbers to provide a bunch of useful methods, allowing you to write
-  * CSS-lengths in a nice syntax without resorting to strings.
-  */
-object cssUnits {
+object units {
 
-  extension[A : Numeric](x: A) {
+  private def unitMacro[A : Type](value: Expr[A], unit: Expr[String])(using Quotes): Expr[String] = value match {
+    case '{ $n: Double } => Splice.phaseSplice(PhunctionToString(Phaser.NextPhase(n).pull), Phaser.NextPhase(unit).pull).expr
+    case '{ $n: Int    } => Splice.phaseSplice(PhunctionToString(Phaser.NextPhase(n).pull), Phaser.NextPhase(unit).pull).expr
+    case _ => '{$value.toString.+($unit)}
+  }
+
+  private inline def unit[A : Numeric](inline n: A, inline unit: String) = ${ unitMacro('n, 'unit) }
+
+  extension [A : Numeric](inline n: A) {
 
     /**
       * Relative to the viewing device. For screen display, typically one device
@@ -31,42 +37,43 @@ object cssUnits {
       *
       * MDN
       */
-    inline def px = s"${x}px"
+    inline def px = unit(n, "px")
+
 
     /**
       * One point which is 1/72 of an inch.
       *
       * MDN
       */
-    inline def pt = s"${x}pt"
+    inline def pt = unit(n, "pt")
 
     /**
       * One millimeter.
       *
       * MDN
       */
-    inline def mm = s"${x}mm"
+    inline def mm = unit(n, "mm")
 
     /**
       * One centimeter 10 millimeters.
       *
       * MDN
       */
-    inline def cm = s"${x}cm"
+    inline def cm = unit(n, "cm")
 
     /**
       * One inch 2.54 centimeters.
       *
       * MDN
       */
-    inline def in = s"${x}in"
+    inline def in = unit(n, "in")
 
     /**
       * One pica which is 12 points.
       *
       * MDN
       */
-    inline def pc = s"${x}pc"
+    inline def pc = unit(n, "pc")
     /**
       * This unit represents the calculated font-size of the element. If used on
       * the font-size property itself, it represents the inherited font-size
@@ -74,7 +81,7 @@ object cssUnits {
       *
       * MDN
       */
-    inline def em = s"${x}em"
+    inline def em = unit(n, "em")
 
     /**
       * This unit represents the width, or more precisely the advance measure, of
@@ -82,7 +89,7 @@ object cssUnits {
       *
       * MDN
       */
-    inline def ch = s"${x}ch"
+    inline def ch = unit(n, "ch")
 
     /**
       * This unit represents the x-height of the element's font. On fonts with the
@@ -91,7 +98,7 @@ object cssUnits {
       *
       * MDN
       */
-    inline def ex = s"${x}ex"
+    inline def ex = unit(n, "ex")
 
     /**
       * This unit represents the font-size of the root element e.g. the font-size
@@ -100,12 +107,12 @@ object cssUnits {
       *
       * MDN
       */
-    inline def rem = s"${x}rem"
+    inline def rem = unit(n, "rem")
 
     /**
       * An angle in degrees. One full circle is 360deg. E.g. 0deg, 90deg, 360deg.
       */
-    inline def deg = s"${x}deg"
+    inline def deg = unit(n, "deg")
 
     /**
       * An angle in gradians. One full circle is 400grad. E.g. 0grad, 100grad,
@@ -113,7 +120,7 @@ object cssUnits {
       *
       * MDN
       */
-    inline def grad = s"${x}grad"
+    inline def grad = unit(n, "grad")
 
     /**
       * An angle in radians.  One full circle is 2π radians which approximates
@@ -121,7 +128,7 @@ object cssUnits {
       *
       * MDN
       */
-    inline def rad = s"${x}rad"
+    inline def rad = unit(n, "rad")
 
     /**
       * The number of turns the angle is. One full circle is 1turn. E.g. 0turn,
@@ -129,13 +136,12 @@ object cssUnits {
       *
       * MDN
       */
-    inline def turn = s"${x}turn"
+    inline def turn = unit(n, "turn")
 
     /**
       * A percentage value
       */
-    inline def pct = s"${x}%"
-
+    inline def pct = unit(n, "%")
   }
 
 }

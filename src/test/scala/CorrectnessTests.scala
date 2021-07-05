@@ -1,12 +1,10 @@
-import minitest.*
-import dottytags.*
-import dottytags.utils.syntax.given
-import scala.language.implicitConversions
-import dottytags.predefs.tags.*
-import dottytags.predefs.attrs.*
-import dottytags.predefs.styles.*
+package scala
 
+import dottytags.*
+import dottytags.predefs.all.*
+import dottytags.syntax.given
 import scala.language.implicitConversions
+import minitest.*
 
 /*
  * Most of these were adapted from Scalatags' test suite so as to correctly test for compatibility,
@@ -21,8 +19,8 @@ object CorrectnessTests extends SimpleTestSuite {
     assertXMLEquiv(
       html(
         head(x, tag("string-tag")("Hi how are you")),
-        body(div(p))
-      ),
+        body(div(p()))
+      ).toString,
       """
       |<html>
       |    <head>
@@ -67,7 +65,7 @@ object CorrectnessTests extends SimpleTestSuite {
 
   // Implicit conversions save the day
   test("Integer Sequence") { assertXMLEquiv (
-    div(h1("Hello ", "#", 1), for(i <- 0 until 5) yield i),
+    div(h1("Hello ", "#", 1), bind(for(i <- 0 until 5) yield i)),
     """<div><h1>Hello #1</h1>01234</div>"""
   )}
 
@@ -96,8 +94,8 @@ object CorrectnessTests extends SimpleTestSuite {
 
   test("Raw Attributes") { assertXMLEquiv (
     button(
-      attrRaw("[class.active]") := "isActive",
-      attrRaw("(click)") := "myEvent()"
+      attr("[class.active]", raw = true) := "isActive",
+      attr("(click)", raw = true) := "myEvent()"
     ),
     """<button [class.active]="isActive" (click)="myEvent()"></button>"""
   )}
@@ -109,7 +107,7 @@ object CorrectnessTests extends SimpleTestSuite {
 
   test("Repeating Attributes Causes them to be Combined") {
     assertXMLEquiv(
-      input(cls := "a", cls := "b").render,
+      input(cls := "a", cls := "b").toString,
       """<input class="a b" />"""
     )
     /*assertXMLEquiv(
@@ -134,7 +132,7 @@ object CorrectnessTests extends SimpleTestSuite {
           )
         )
       )
-    ).render, 
+    ).toString,
     """
     |    <html>
     |        <head>

@@ -1,9 +1,8 @@
 package dottytags.predefs
 
 import scala.annotation.targetName
-import scala.language.adhocExtensions // Just because I extend StyleClass doesn't mean you should!
-
-import dottytags._
+import scala.language.adhocExtensions
+import dottytags.*
 
 /*
  * Documentation marked "MDN" is thanks to Mozilla Contributors
@@ -14,7 +13,7 @@ import dottytags._
  * Everything else is under the MIT License, see here:
  * https://github.com/CiaraOBrien/dottytags/blob/main/LICENSE
  * 
- * This whole file is, of course, adapted from scalatags:
+ * This whole file is, of course, adapted from Scalatags:
  * https://github.com/lihaoyi/scalatags/blob/master/scalatags/src/scalatags/generic/Styles.scala
  */
 
@@ -416,7 +415,9 @@ object styles {
    *
    * MDN
    */
-  object borderTopRightRadius { inline def :=(inline setTo: String): Style = cssPx("border-top-right-radius") := setTo }
+  object borderTopRightRadius { inline def :=(inline setTo: String): Style = css("border-top-right-radius", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Int): Style = css("border-top-right-radius", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Double): Style = css("border-top-right-radius", defaultUnits = "px") := setTo }
 
   /**
    * The border-bottom-left-radius CSS property sets the rounding of the
@@ -426,7 +427,9 @@ object styles {
    *
    * MDN
    */
-  object borderBottomLeftRadius { inline def :=(inline setTo: String): Style = cssPx("border-bottom-left-radius") := setTo }
+  object borderBottomLeftRadius { inline def :=(inline setTo: String): Style = css("border-bottom-left-radius", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Int): Style = css("border-bottom-left-radius", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Double): Style = css("border-bottom-left-radius", defaultUnits = "px") := setTo }
 
   /**
    * The border-right-color CSS property sets the color of the top border of an
@@ -750,7 +753,9 @@ object styles {
    *
    * MDN
    */
-  object borderRadius { inline def :=(inline setTo: String): Style = cssPx("border-radius") := setTo }
+  object borderRadius { inline def :=(inline setTo: String): Style = css("border-radius", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Int): Style = css("border-radius", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Double): Style = css("border-radius", defaultUnits = "px") := setTo }
 
   /**
    * The border-width CSS property sets the width of the border of a box. Using
@@ -768,7 +773,9 @@ object styles {
    *
    * MDN
    */
-  object borderBottomRightRadius { inline def :=(inline setTo: String): Style = cssPx("border-bottom-right-radius") := setTo }
+  object borderBottomRightRadius { inline def :=(inline setTo: String): Style = css("border-bottom-right-radius", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Int): Style = css("border-bottom-right-radius", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Double): Style = css("border-bottom-right-radius", defaultUnits = "px") := setTo }
 
   /**
    * The border-top-left-radius CSS property sets the rounding of the
@@ -778,7 +785,9 @@ object styles {
    *
    * MDN
    */
-  object borderTopLeftRadius { inline def :=(inline setTo: String): Style = cssPx("border-top-left-radius") := setTo }
+  object borderTopLeftRadius { inline def :=(inline setTo: String): Style = css("border-top-left-radius", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Int): Style = css("border-top-left-radius", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Double): Style = css("border-top-left-radius", defaultUnits = "px") := setTo }
 
   /**
    * The border-color CSS property is a shorthand for setting the color of the
@@ -1461,7 +1470,9 @@ object styles {
    *
    * MDN
    */
-  object maxWidth { inline def :=(inline setTo: String): Style = cssPx("max-width") := setTo 
+  object maxWidth { inline def :=(inline setTo: String): Style = css("max-width", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Int): Style = css("max-width", defaultUnits = "px") := setTo
+  inline def :=(inline setTo: Double): Style = css("max-width", defaultUnits = "px") := setTo
     /**
      * The length has no maximum value.
      *
@@ -1650,7 +1661,9 @@ object styles {
    *
    * MDN
    */
-  object height { inline def :=(inline setTo: String): Style = cssPx("height") := setTo
+  object height { inline def :=(inline setTo: String): Style = css("height", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Int): Style = css("height", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Double): Style = css("height", defaultUnits = "px") := setTo
     inline def auto = this := "auto"
   }
 
@@ -1663,7 +1676,9 @@ object styles {
    *
    * MDN
    */
-  object paddingRight { inline def :=(inline setTo: String): Style = cssPx("padding-right") := setTo }
+  object paddingRight { inline def :=(inline setTo: String): Style = css("padding-right", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Int): Style = css("padding-right", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Double): Style = css("padding-right", defaultUnits = "px") := setTo }
 
   /**
    * The padding-top CSS property of an element sets the padding space required
@@ -1673,7 +1688,9 @@ object styles {
    *
    * MDN
    */
-  object paddingTop { inline def :=(inline setTo: String): Style = cssPx("padding-top") := setTo }
+  object paddingTop { inline def :=(inline setTo: String): Style = css("padding-top", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Int): Style = css("padding-top", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Double): Style = css("padding-top", defaultUnits = "px") := setTo }
 
   /**
    * The padding-left CSS property of an element sets the padding space required
@@ -1682,7 +1699,9 @@ object styles {
    *
    * MDN
    */
-  object paddingLeft { inline def :=(inline setTo: String): Style = cssPx("padding-left") := setTo }
+  object paddingLeft { inline def :=(inline setTo: String): Style = css("padding-left", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Int): Style = css("padding-left", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Double): Style = css("padding-left", defaultUnits = "px") := setTo }
 
   /**
    * The padding CSS property sets the required padding space on all sides of an
@@ -1694,7 +1713,9 @@ object styles {
    *
    * MDN
    */
-  object padding { inline def :=(inline setTo: String): Style = cssPx("padding") := setTo }
+  object padding { inline def :=(inline setTo: String): Style = css("padding", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Int): Style = css("padding", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Double): Style = css("padding", defaultUnits = "px") := setTo }
 
   /**
    * The padding-bottom CSS property of an element sets the height of the padding
@@ -1704,7 +1725,9 @@ object styles {
    *
    * MDN
    */
-  object paddingBottom { inline def :=(inline setTo: String): Style = cssPx("padding-bottom") := setTo }
+  object paddingBottom { inline def :=(inline setTo: String): Style = css("padding-bottom", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Int): Style = css("padding-bottom", defaultUnits = "px") := setTo
+inline def :=(inline setTo: Double): Style = css("padding-bottom", defaultUnits = "px") := setTo }
 
   /**
    * The right CSS property specifies part of the position of positioned elements.
@@ -1724,7 +1747,9 @@ object styles {
    *
    * MDN
    */
-  object right { inline def :=(inline setTo: String): Style = cssPx("right") := setTo
+  object right { inline def :=(inline setTo: String): Style = css("right", defaultUnits = "px") := setTo
+  inline def :=(inline setTo: Int): Style = css("right", defaultUnits = "px") := setTo
+  inline def :=(inline setTo: Double): Style = css("right", defaultUnits = "px") := setTo
     inline def auto = this := "auto"
   }
 
@@ -1754,7 +1779,9 @@ object styles {
    *
    * MDN
    */
-  object left { inline def :=(inline setTo: String): Style = cssPx("left") := setTo
+  object left { inline def :=(inline setTo: String): Style = css("left", defaultUnits = "px") := setTo
+  inline def :=(inline setTo: Int): Style = css("left", defaultUnits = "px") := setTo
+  inline def :=(inline setTo: Double): Style = css("left", defaultUnits = "px") := setTo
     inline def auto = this := "auto"
   }
 
@@ -2259,7 +2286,9 @@ object styles {
    *
    * MDN
    */
-  object marginBottom { inline def :=(inline setTo: String): Style = cssPx("margin-bottom") := setTo
+  object marginBottom { inline def :=(inline setTo: String): Style = css("margin-bottom", defaultUnits = "px") := setTo
+  inline def :=(inline setTo: Int): Style = css("margin-bottom", defaultUnits = "px") := setTo
+  inline def :=(inline setTo: Double): Style = css("margin-bottom", defaultUnits = "px") := setTo
     inline def auto = this := "auto"
   }
 
@@ -2269,7 +2298,9 @@ object styles {
    *
    * MDN
    */
-  object marginRight { inline def :=(inline setTo: String): Style = cssPx("margin-right") := setTo
+  object marginRight { inline def :=(inline setTo: String): Style = css("margin-right", defaultUnits = "px") := setTo
+  inline def :=(inline setTo: Int): Style = css("margin-right", defaultUnits = "px") := setTo
+  inline def :=(inline setTo: Double): Style = css("margin-right", defaultUnits = "px") := setTo
     inline def auto = this := "auto"
   }
 
@@ -2280,7 +2311,9 @@ object styles {
    *
    * MDN
    */
-  object marginTop { inline def :=(inline setTo: String): Style = cssPx("margin-top") := setTo 
+  object marginTop { inline def :=(inline setTo: String): Style = css("margin-top", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Int): Style = css("margin-top", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Double): Style = css("margin-top", defaultUnits = "px") := setTo 
     inline def auto = this := "auto" 
   }
 
@@ -2295,7 +2328,9 @@ object styles {
    *
    * MDN
    */
-  object marginLeft { inline def :=(inline setTo: String): Style = cssPx("margin-left") := setTo 
+  object marginLeft { inline def :=(inline setTo: String): Style = css("margin-left", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Int): Style = css("margin-left", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Double): Style = css("margin-left", defaultUnits = "px") := setTo 
     inline def auto = this := "auto" 
   }
   /**
@@ -2307,7 +2342,9 @@ object styles {
    *
    * MDN
    */
-  object margin { inline def :=(inline setTo: String): Style = cssPx("margin") := setTo 
+  object margin { inline def :=(inline setTo: String): Style = css("margin", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Int): Style = css("margin", defaultUnits = "px") := setTo
+  inline def :=(inline setTo: Double): Style = css("margin", defaultUnits = "px") := setTo
     inline def auto = this := "auto" 
   }
 
@@ -2329,7 +2366,9 @@ object styles {
    *
    * MDN
    */
-  object top { inline def :=(inline setTo: String): Style = cssPx("top") := setTo 
+  object top { inline def :=(inline setTo: String): Style = css("top", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Int): Style = css("top", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Double): Style = css("top", defaultUnits = "px") := setTo 
     inline def auto = this := "auto" 
   }
 
@@ -2342,8 +2381,12 @@ object styles {
    *
    * MDN
    */
-  object width { inline def :=(inline setTo: String): Style = cssPx("width") := setTo 
-    inline def auto = this := "auto" 
+  object width {
+    inline def :=(inline setTo: String): Style = css("width", defaultUnits = "px") := setTo 
+    inline def :=(inline setTo: Int): Style = css("width", defaultUnits = "px") := setTo 
+    inline def :=(inline setTo: Double): Style = css("width", defaultUnits = "px") := setTo 
+	
+    inline def auto = width := "auto"
   }
 
   /**
@@ -2363,7 +2406,9 @@ object styles {
    *
    * MDN
    */
-  object bottom { inline def :=(inline setTo: String): Style = cssPx("bottom") := setTo 
+  object bottom { inline def :=(inline setTo: String): Style = css("bottom", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Int): Style = css("bottom", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Double): Style = css("bottom", defaultUnits = "px") := setTo 
     inline def auto = this := "auto" 
   }
 
@@ -2387,7 +2432,9 @@ object styles {
    *
    * MDN
    */
-  object maxHeight { inline def :=(inline setTo: String): Style = cssPx("max-height") := setTo 
+  object maxHeight { inline def :=(inline setTo: String): Style = css("max-height", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Int): Style = css("max-height", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Double): Style = css("max-height", defaultUnits = "px") := setTo 
     /**
      * The length has no maximum value.
      *
@@ -2433,7 +2480,9 @@ object styles {
    *
    * MDN
    */
-  object minWidth { inline def :=(inline setTo: String): Style = cssPx("min-width") := setTo 
+  object minWidth { inline def :=(inline setTo: String): Style = css("min-width", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Int): Style = css("min-width", defaultUnits = "px") := setTo 
+  inline def :=(inline setTo: Double): Style = css("min-width", defaultUnits = "px") := setTo 
     /**
      * The intrinsic preferred length.
      *
@@ -2475,7 +2524,7 @@ object styles {
    *
    * MDN
    */
-  object minHeight { inline def :=(inline setTo: String): Style = cssPx("min-height") := setTo 
+  object minHeight { inline def :=(inline setTo: String): Style = css("min-height", defaultUnits = "px") := setTo 
     /**
      * The intrinsic preferred length.
      *

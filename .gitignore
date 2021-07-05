@@ -1,8 +1,8 @@
-.bsp
-.idea
-**/target
-.dotty-ide.json
-.dotty-ide-artifact
-.bloop
-.vscode
-.metals
+.bsp/**
+.metals/**
+.vscode/**
+.dotty**
+.idea**
+**target**
+**/metals.sbt
+**.log
