@@ -16,14 +16,17 @@ import scala.quoted.*
  */
 
 object units {
-
+  
+  /**
+   * Macro to simplify all of the unit declarations, they all just call it with a different string parameter.
+   */
+  private inline def unit[A : Numeric](inline n: A, inline unit: String) = ${ unitMacro('n, 'unit) }
   private def unitMacro[A : Type](value: Expr[A], unit: Expr[String])(using Quotes): Expr[String] = value match {
-    case '{ $n: Double } => Splice.phaseSplice(PhunctionToString(Phaser.NextPhase(n).pull), Phaser.NextPhase(unit).pull).expr
-    case '{ $n: Int    } => Splice.phaseSplice(PhunctionToString(Phaser.NextPhase(n).pull), Phaser.NextPhase(unit).pull).expr
+    case '{ $n: Double } => Splice.phaseSplice(PhunctionToString(Phased(n).maybeEval), Phased(unit).maybeEval).expr
+    case '{ $n: Int    } => Splice.phaseSplice(PhunctionToString(Phased(n).maybeEval), Phased(unit).maybeEval).expr
     case _ => '{$value.toString.+($unit)}
   }
 
-  private inline def unit[A : Numeric](inline n: A, inline unit: String) = ${ unitMacro('n, 'unit) }
 
   extension [A : Numeric](inline n: A) {
 

@@ -1,5 +1,3 @@
-package scala
-
 import dottytags.*
 import dottytags.predefs.all.*
 import dottytags.syntax.given
@@ -14,6 +12,8 @@ import minitest.*
 
 object ExampleTests extends SimpleTestSuite {
 
+  import dottytags.syntax.given
+  
   test("Import Example") { assertXMLEquiv(
       div(
         p(color:="red", fontSize:=64.pt, "Big Red Text"),

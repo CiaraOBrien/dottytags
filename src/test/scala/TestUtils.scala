@@ -1,5 +1,3 @@
-package scala
-
 import minitest.api.{SourceLocation, AssertionException}
 import minitest.api.Asserts.*
 import Console.*

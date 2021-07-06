@@ -1,5 +1,3 @@
-package scala
-
 import dottytags.*
 import dottytags.predefs.all.*
 import dottytags.syntax.given

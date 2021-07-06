@@ -1,20 +1,13 @@
 lazy val versionString = "3.0.0"
 
-lazy val root = project.in(file("."))
-.aggregate(dottytags.jvm, dottytags.js)
-.settings(
-  Compile / sources := Nil,
-  Test    / sources := Nil,
-  publish           := {},
-  publishLocal      := {},
-  taste := (tasty / Compile / taste).value
-)
+ThisBuild / scalaVersion := versionString
+sonatypeCredentialHost := "s01.oss.sonatype.org"
 
 lazy val dottytags = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("."))
 .settings(
   name                  := "dottytags",
   description           := "An experimental reimplementation of Scalatags using Scala 3 macros to do the work at compile-time.",
-  version               := "1.0.0",
+  version               := "1.1.0",
   versionScheme         := Some("semver-spec"),
   scalaVersion          := versionString,
   organization          := "io.github.ciaraobrien",
@@ -26,23 +19,20 @@ lazy val dottytags = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.P
   licenses              := List("MIT" -> url("https://github.com/CiaraOBrien/dottytags/blob/main/LICENSE")),
   scmInfo               := Some(ScmInfo(url("https://github.com/CiaraOBrien/dottytags"), "scm:git@github.com:CiaraOBrien/dottytags.git")),
   homepage              := Some(url("https://github.com/CiaraOBrien/dottytags")),
+  scalacOptions        ++= Seq( "-indent", "-new-syntax", "-Yexplicit-nulls", "-language:strictEquality" ),
+  // Maven upload stuff, using sbt-sonatype because the built-in support seems not to work anymore
   publishMavenStyle     := true,
   pomIncludeRepository  := { _ => false },
-  publishTo := {
-    val nexus = "https://s01.oss.sonatype.org/"
-    if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
-    else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  },
+  publishTo := sonatypePublishToBundle.value,
+  sonatypeCredentialHost := "s01.oss.sonatype.org",
+  // Tests
   libraryDependencies  ++= Seq(
-      "io.monix" %%% "minitest" % "2.9.6" % "test",
-      ("com.lihaoyi" %%% "scalatags" % "0.9.4").cross(CrossVersion.for3Use2_13),
+    "io.monix" %%% "minitest" % "2.9.6" % Test,
+    ("com.lihaoyi" %%% "scalatags" % "0.9.4" % Test).cross(CrossVersion.for3Use2_13),
   ),
   testFrameworks        += new TestFramework("minitest.runner.Framework"),
   parallelExecution     := false,
-  crossTarget           := file("target"),
-  scalacOptions        ++= Seq( "-indent", "-new-syntax", "-Yexplicit-nulls", "-language:strictEquality" ),
 ).jvmSettings(
-
 ).jsSettings(
   Compile / scalaJSUseMainModuleInitializer := true,
   jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),

@@ -1,5 +1,3 @@
-package scala
-
 import minitest.*
 
 object PerfTestDotty extends SimpleTestSuite {
