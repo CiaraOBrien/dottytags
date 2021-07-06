@@ -3,7 +3,7 @@
 
 Finally released on Maven Central!
 ```scala
-libraryDependencies += "io.github.ciaraobrien" %% "dottytags" % "1.0.0"
+libraryDependencies += "io.github.ciaraobrien" %% "dottytags" % "1.1.0"
 ```
 
 An experimental reimplementation of [ScalaTags](https://com-lihaoyi.github.io/scalatags/) in (extremely meta) Scala 3. It is a more-or-less working clone of
